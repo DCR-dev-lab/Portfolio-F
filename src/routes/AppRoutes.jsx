@@ -10,10 +10,9 @@ import AdminProfile from "../pages/admin/AdminProfile";
 import Home from "../pages/public/Home";
 import Projects from "../pages/public/Projects";
 import Skills from "../pages/public/Skills";
-// import About from "../pages/public/About";
 import Contact from "../pages/public/Contact";
-
-
+import PrivacyPolicy from "../pages/public/PrivacyPolicy";
+import TermsOfService from "../pages/public/TermsOfService";
 
 const AppRoutes = () => {
     return (
@@ -23,7 +22,9 @@ const AppRoutes = () => {
             <Route path="/projects" element={<Projects />} />
             <Route path="/skills" element={<Skills />} />
             <Route path="/contact" element={<Contact />} />
-           {/*  <Route path="/about" element={<About />} /> */}
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+           
 
             {/* Admin login */}
             <Route path="/admin/login" element={<AdminLogin />} />

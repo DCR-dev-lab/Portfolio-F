@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ExternalLink, Github, ArrowRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import portfolioPlaceholder from '../../assets/images/portfolio-placeholder.svg';
 
 const FeaturedProjects = ({ projects }) => {
     const [isVisible, setIsVisible] = useState(false);
@@ -29,7 +30,7 @@ const FeaturedProjects = ({ projects }) => {
             _id: '1',
             title: 'E-Commerce Platform',
             description: 'A full-stack e-commerce solution with real-time inventory management and seamless checkout experience.',
-            imageUrl: 'https://images.unsplash.com/photo-1557821552-17105176677c?w=800',
+            imageUrl: portfolioPlaceholder,
             tags: ['React', 'Node.js', 'MongoDB'],
             liveUrl: '#',
             githubUrl: '#',
@@ -39,7 +40,7 @@ const FeaturedProjects = ({ projects }) => {
             _id: '2',
             title: 'AI Content Generator',
             description: 'Intelligent content creation tool powered by machine learning algorithms for marketing teams.',
-            imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800',
+            imageUrl: portfolioPlaceholder,
             tags: ['Python', 'TensorFlow', 'React'],
             liveUrl: '#',
             githubUrl: '#',
@@ -49,7 +50,7 @@ const FeaturedProjects = ({ projects }) => {
             _id: '3',
             title: 'Portfolio CMS',
             description: 'Beautiful and intuitive content management system designed specifically for creative professionals.',
-            imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
+            imageUrl: portfolioPlaceholder,
             tags: ['Next.js', 'Tailwind', 'Sanity'],
             liveUrl: '#',
             githubUrl: '#',
@@ -106,7 +107,7 @@ const FeaturedProjects = ({ projects }) => {
                                 {/* Image Container */}
                                 <div className="relative h-56 overflow-hidden">
                                     <img
-                                        src={project.imageUrl || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800'}
+                                        src={project.imageUrl || portfolioPlaceholder}
                                         alt={project.title}
                                         className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
                                     />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import portfolioPlaceholder from '../../../assets/images/portfolio-placeholder.svg';
 import { 
     ArrowRight, 
     Download, 
@@ -28,7 +29,7 @@ const SplitScreenHero = ({
     description = "Bridging the gap between beautiful design and functional code. Creating digital experiences that users love and businesses need.",
     
     // Media
-    imageUrl = "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=800&auto=format&fit=crop",
+    imageUrl = portfolioPlaceholder,
     mediaType = "image", // 'image', 'video', 'illustration'
     mediaAlt = "Profile photo",
     

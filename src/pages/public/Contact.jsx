@@ -7,7 +7,7 @@ import {
 
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
-import Loader1 from "../../components/common/loader/loader1";
+import Loader1 from "../../components/common/loader/Loader1";
 import { getProfile } from "../../services/profile.service";
 
 const SKILLS = [

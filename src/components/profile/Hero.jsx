@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {Link} from 'react-router-dom';
 import { Github, Linkedin, Twitter, Instagram, Download, ArrowRight, Sparkles } from 'lucide-react';
+import portfolioPlaceholder from '../../assets/images/portfolio-placeholder.svg';
 
 const Hero = ({ profile, onScrollToNext }) => {
     const [isVisible, setIsVisible] = useState(false);
@@ -17,7 +18,7 @@ const Hero = ({ profile, onScrollToNext }) => {
         fullName: "DCR",
         title: "Modern Designer & Developer",
         shortIntro: "Creating beautiful digital experiences",
-        profilePictureUrl: "https://via.placeholder.com/400",
+        profilePictureUrl: portfolioPlaceholder,
         socialLinks: {},
         ...profile,
     };

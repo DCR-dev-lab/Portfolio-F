@@ -105,7 +105,7 @@ const Footer = () => {
                             className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
                         >
                             <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                            <span className="text-sm">hello@DCR.dev</span>
+                            <span className="text-sm">dennycharlesraj22@gmail.com</span>
                         </a>
                     </div>
                 </div>
