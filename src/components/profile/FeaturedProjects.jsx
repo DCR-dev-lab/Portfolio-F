@@ -32,7 +32,7 @@ const FeaturedProjects = ({ projects }) => {
             description: 'A full-stack e-commerce solution with real-time inventory management and seamless checkout experience.',
             imageUrl: portfolioPlaceholder,
             tags: ['React', 'Node.js', 'MongoDB'],
-            liveUrl: '#',
+            projectUrl: '#',
             githubUrl: '#',
             featured: true
         },
@@ -42,7 +42,7 @@ const FeaturedProjects = ({ projects }) => {
             description: 'Intelligent content creation tool powered by machine learning algorithms for marketing teams.',
             imageUrl: portfolioPlaceholder,
             tags: ['Python', 'TensorFlow', 'React'],
-            liveUrl: '#',
+            projectUrl: '#',
             githubUrl: '#',
             featured: true
         },
@@ -52,7 +52,7 @@ const FeaturedProjects = ({ projects }) => {
             description: 'Beautiful and intuitive content management system designed specifically for creative professionals.',
             imageUrl: portfolioPlaceholder,
             tags: ['Next.js', 'Tailwind', 'Sanity'],
-            liveUrl: '#',
+            projectUrl: '#',
             githubUrl: '#',
             featured: false
         }
@@ -117,9 +117,9 @@ const FeaturedProjects = ({ projects }) => {
 
                                     {/* Hover Actions */}
                                     <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {project.liveUrl && (
+                                        {project.projectUrl && (
                                             <a
-                                                href={project.liveUrl}
+                                                href={project.projectUrl}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className="p-3 rounded-full bg-white text-purple-600 hover:bg-purple-600 hover:text-white transition-all transform hover:scale-110"

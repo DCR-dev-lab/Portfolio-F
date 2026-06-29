@@ -1,14 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { Zap, TrendingUp } from 'lucide-react';
 
-import { getSkills } from "../../services/skill.service";
+
 import { SkillCard } from "../cards/SkillCard";
 
 import { Link } from "react-router-dom";
 
-const SkillsPreview = () => {
-    const [skills, setSkills] = useState([]);
-    const [loading, setLoading] = useState(true);
+const SkillsPreview = ({ skills }) => {
+
     const [isVisible, setIsVisible] = useState(false);
     const [hoveredSkill, setHoveredSkill] = useState(null);
     const sectionRef = useRef(null);
@@ -30,22 +29,7 @@ const SkillsPreview = () => {
         return () => observer.disconnect();
     }, []);
 
-    useEffect(() => {
-        const fetchSkills = async () => {
-            try {
-                const res = await getSkills();
-                setSkills(res.data.slice(0, 6));
-            } catch (err) {
-                console.error(err.message || "Failed to load skills");
-            } finally {
-                setLoading(false);
-            }
-        };
 
-        fetchSkills();
-    }, []);
-
-    const previewSkills = skills.slice(0, 6);
 
     const getGradientColor = (index) => {
         const gradients = [
@@ -87,18 +71,9 @@ const SkillsPreview = () => {
                 </div>
 
                 {/* Skills Grid or Loading/Empty States */}
-                {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div
-                                key={i}
-                                className="h-64 bg-white/5 rounded-2xl animate-pulse border border-white/10"
-                            />
-                        ))}
-                    </div>
-                ) : previewSkills.length > 0 ? (
+                {skills.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                        {previewSkills.map((skill, index) => (
+                        {skills.map((skill, index) => (
                             <div
                                 key={skill._id}
                                 onMouseEnter={() => setHoveredSkill(skill._id)}
@@ -120,7 +95,7 @@ const SkillsPreview = () => {
                 )}
 
                 {/* View All Link - Only show if there are skills */}
-                {!loading && previewSkills.length > 0 && (
+                {skills.length > 0 && (
                     <div
                         className={`text-center mt-10 md:mt-12 transition-all duration-1000 delay-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
                             }`}

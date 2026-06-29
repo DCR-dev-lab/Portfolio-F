@@ -1,3 +1,5 @@
+import {useEffect, useState} from "react";
+
 import { Link } from "react-router-dom";
 import {
     Heart,
@@ -9,20 +11,39 @@ import {
     Sparkles
 } from "lucide-react";
 
+import {getProfile} from "../../services/profile.service";
+
 const Footer = () => {
+    const [profile, setProfile] = useState(null);
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const profileRes = await getProfile();
+                setProfile(profileRes.data ?? null);
+                console.log("Profile data loaded:", profileRes.data);
+            } catch (err) {
+                console.error("Failed to load profile:", err);
+            }
+        };
+        loadProfile();
+    }, []);
+
+    const socialLinks = [
+        { icon: Github, url: profile?.socialLinks?.github || "https://github.com", label: "GitHub", color: "hover:text-gray-400" },
+        { icon: Linkedin, url: profile?.socialLinks?.linkedin || "https://linkedin.com", label: "LinkedIn", color: "hover:text-blue-400" },
+        { icon: Twitter, url: profile?.socialLinks?.twitter || "https://twitter.com", label: "Twitter", color: "hover:text-sky-400" },
+        { icon: Instagram, url: profile?.socialLinks?.instagram || "https://instagram.com", label: "Instagram", color: "hover:text-pink-400" }
+    ];
+
+
+
     const currentYear = new Date().getFullYear();
 
     const quickLinks = [
         { path: "/", label: "Home" },
         { path: "/projects", label: "Projects" },
         { path: "/contact", label: "Contact" }
-    ];
-
-    const socialLinks = [
-        { icon: Github, url: "https://github.com", label: "GitHub", color: "hover:text-gray-400" },
-        { icon: Linkedin, url: "https://linkedin.com", label: "LinkedIn", color: "hover:text-blue-400" },
-        { icon: Twitter, url: "https://twitter.com", label: "Twitter", color: "hover:text-sky-400" },
-        { icon: Instagram, url: "https://instagram.com", label: "Instagram", color: "hover:text-pink-400" }
     ];
 
     return (
@@ -101,7 +122,7 @@ const Footer = () => {
                         </div>
 
                         <a
-                            href="mailto:hello@DCR.dev"
+                            href="mailto:dennycharlesraj22@gmail.com"
                             className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
                         >
                             <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
