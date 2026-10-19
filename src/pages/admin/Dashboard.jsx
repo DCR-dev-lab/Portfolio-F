@@ -1,7 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import usePageSEO from "../../hooks/usePageSEO";
 
 const Dashboard = () => {
+    usePageSEO({
+        title: "Admin Dashboard",
+        description: "Admin content management dashboard.",
+        noindex: true,
+    });
+
     const navigate = useNavigate();
 
     const handleLogout = () => {

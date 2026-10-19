@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,27 +13,57 @@
     />
     <meta name="author" content="DCR" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#581c87" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0c0a09" />
+    <meta name="color-scheme" content="dark" />
 
+    <!-- Google Fonts: Plus Jakarta Sans (Warm Architectural Sans) & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Security & Referrer Policy -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Canonical URL (dynamically set by usePageSEO per page) -->
+    <link rel="canonical" id="canonical-link" />
+
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="DCR Portfolio" />
+    <meta
+      property="og:title"
+      content="Denny Charles Raj | Full Stack Developer &amp; UI Architect"
+    />
     <meta
       property="og:description"
-      content="Explore DCR's projects, skills, and developer profile."
+      content="Explore Denny Charles Raj's full-stack projects, system architecture, technical skills, and developer profile."
     />
+    <meta property="og:url" content="https://dcr-portfolio.com/" />
     <meta property="og:site_name" content="DCR Portfolio" />
+    <meta property="og:image" content="/og-image.svg" />
 
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="DCR Portfolio" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Denny Charles Raj | Full Stack Developer &amp; UI Architect"
+    />
     <meta
       name="twitter:description"
-      content="Explore DCR's projects, skills, and developer profile."
+      content="Explore Denny Charles Raj's full-stack projects, system architecture, technical skills, and developer profile."
     />
+    <meta name="twitter:image" content="/og-image.svg" />
 
-    <title>DCR Portfolio</title>
+    <title>Denny Charles Raj | Full Stack Developer &amp; UI Architect</title>
   </head>
-  <body>
+  <body
+    class="bg-[#0c0a09] text-[#faf8f5] font-sans antialiased selection:bg-red-600 selection:text-white"
+  >
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -107,17 +107,22 @@ export const CategoryIcon = ({ category, className, iconKeyword, skillName }) =>
     //     return <span className={`flex items-center justify-center font-semibold ${className}`}>{fallbackInitial}</span>;
     // }
 
-    if (category === "Frontend") return <LucideIcons.Code2 className={className} aria-hidden="true" />;
-    if (category === "Backend") return <LucideIcons.Server className={className} aria-hidden="true" />;
-    if (category === "Database") return <LucideIcons.Database className={className} aria-hidden="true" />;
-    if (category === "DevOps") return <LucideIcons.Layers className={className} aria-hidden="true" />;
+    const normCat = category?.toLowerCase() || "";
+
+    if (category === "Frontend" || normCat.includes("front")) return <LucideIcons.Code2 className={className} aria-hidden="true" />;
+    if (category === "Backend" || normCat.includes("back")) return <LucideIcons.Server className={className} aria-hidden="true" />;
+    if (category === "Database" || normCat.includes("data")) return <LucideIcons.Database className={className} aria-hidden="true" />;
+    if (category === "DevOps" || normCat.includes("cloud") || normCat.includes("devops")) return <LucideIcons.Layers className={className} aria-hidden="true" />;
     if (category === "Language") return <LucideIcons.Code className={className} aria-hidden="true" />;
     if (category === "Testing") return <LucideIcons.Bug className={className} aria-hidden="true" />;
-    if (category === "UI/UX") return <LucideIcons.Palette className={className} aria-hidden="true" />;
+    if (category === "UI/UX" || normCat.includes("design") || normCat.includes("ui")) return <LucideIcons.Palette className={className} aria-hidden="true" />;
     if (category === "Performance") return <LucideIcons.Gauge className={className} aria-hidden="true" />;
-    if (category === "Deployment") return <LucideIcons.Rocket className={className} aria-hidden="true" />;
+    if (category === "Deployment" || normCat.includes("saas")) return <LucideIcons.Rocket className={className} aria-hidden="true" />;
     if (category === "Authentication") return <LucideIcons.Key className={className} aria-hidden="true" />;
     if (category === "Cookie") return <LucideIcons.Cookie className={className} aria-hidden="true" />;
+    if (normCat.includes("ai") || normCat.includes("ml")) return <LucideIcons.Cpu className={className} aria-hidden="true" />;
+    if (normCat.includes("mobile") || normCat.includes("app")) return <LucideIcons.Smartphone className={className} aria-hidden="true" />;
+    if (normCat.includes("productivity")) return <LucideIcons.Zap className={className} aria-hidden="true" />;
 
     return <LucideIcons.Award className={className} aria-hidden="true" />;
 };

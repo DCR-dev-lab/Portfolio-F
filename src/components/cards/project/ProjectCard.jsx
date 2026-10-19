@@ -21,7 +21,7 @@ const ProjectCard = ({
         if (isAnimating || showCurtain) return;
         setIsAnimating(true);
         setShowCurtain(true);
-        setTimeout(() => setIsAnimating(false), 600);
+        setTimeout(() => setIsAnimating(false), 500);
     };
 
     const closeCurtain = (e) => {
@@ -29,7 +29,7 @@ const ProjectCard = ({
         if (isAnimating || !showCurtain) return;
         setIsAnimating(true);
         setShowCurtain(false);
-        setTimeout(() => setIsAnimating(false), 600);
+        setTimeout(() => setIsAnimating(false), 500);
     };
 
     const indexLabel = (index + 1).toString().padStart(2, "0");
@@ -37,13 +37,14 @@ const ProjectCard = ({
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.07, duration: 0.5, ease: "easeOut" }}
+            transition={{ delay: index * 0.05, duration: 0.4, ease: "easeOut" }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`group relative h-[420px] w-full overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm shadow-2xl ${showCurtain ? "cursor-default" : "cursor-pointer"
-                }`}
+            className={`group relative h-[420px] w-full overflow-hidden rounded-2xl border border-stone-800/80 bg-stone-900/40 backdrop-blur-md shadow-xl transition-all duration-300 hover:border-red-500/40 ${
+                showCurtain ? "cursor-default" : "cursor-pointer"
+            }`}
             onClick={() => !showCurtain && openCurtain()}
             role="button"
             aria-expanded={showCurtain}
@@ -61,13 +62,13 @@ const ProjectCard = ({
                 className="absolute inset-0 z-[1] pointer-events-none rounded-2xl"
                 style={{
                     background:
-                        "radial-gradient(ellipse at 50% 110%, rgba(168,85,247,0.2) 0%, transparent 65%)",
+                        "radial-gradient(ellipse at 50% 110%, rgba(220,38,38,0.14) 0%, transparent 65%)",
                 }}
             />
 
             <div className="absolute top-4 right-4 z-20 select-none cursor-default">
-                <span className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1 text-[10px] font-medium text-purple-200">
-                    <Sparkles className="w-3 h-3 text-yellow-400" />
+                <span className="inline-flex items-center gap-1.5 bg-[#0c0a09]/90 backdrop-blur-md border border-stone-800 rounded-full px-3 py-1 text-[11px] font-mono text-stone-400 group-hover:text-red-400 group-hover:border-red-500/30 transition-colors">
+                    <Sparkles className="w-3 h-3 text-red-400" />
                     {indexLabel}
                 </span>
             </div>
@@ -92,10 +93,10 @@ const ProjectCard = ({
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: linear-gradient(180deg, #a855f7, #ec4899);
-                    border-radius: 10px;
+                    background: #dc2626;
+                    border-radius: 9999px;
                 }
-                .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #a855f7 transparent; }
+                .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #dc2626 transparent; }
             `}</style>
         </motion.div>
     );

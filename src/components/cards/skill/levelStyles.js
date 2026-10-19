@@ -1,8 +1,8 @@
 export const levelStyles = [
-    { min: 90, label: "Master", bar: "from-yellow-300 to-amber-500", text: "text-yellow-200" },
-    { min: 80, label: "Expert", bar: "from-purple-300 to-pink-400", text: "text-purple-100" },
-    { min: 70, label: "Advanced", bar: "from-blue-300 to-cyan-400", text: "text-blue-100" },
-    { min: 0, label: "Growing", bar: "from-emerald-300 to-teal-400", text: "text-emerald-100" },
+    { min: 90, label: "Master", bar: "from-red-600 to-rose-400", text: "text-red-400" },
+    { min: 80, label: "Expert", bar: "from-red-700 to-red-500", text: "text-rose-400" },
+    { min: 70, label: "Advanced", bar: "from-stone-700 to-red-600", text: "text-stone-300" },
+    { min: 0, label: "Growing", bar: "from-stone-800 to-stone-600", text: "text-stone-400" },
 ];
 
 export const getLevelStyle = (proficiency) => (

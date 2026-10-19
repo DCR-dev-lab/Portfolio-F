@@ -1,5 +1,26 @@
 import styled from 'styled-components';
 
+const LETTERS = [
+    {
+        key: 'D',
+        grad: 'url(#grad1)',
+        d: 'M 8,4 h 15 c 15,0 28,10 28,28 c 0,18 -13,28 -28,28 h -15 z',
+        className: 'dash'
+    },
+    {
+        key: 'C',
+        grad: 'url(#grad2)',
+        d: 'M 32 32 m 0 -27 a 27 27 0 1 1 0 54 a 27 27 0 1 1 0 -54',
+        className: 'spin'
+    },
+    {
+        key: 'R',
+        grad: 'url(#grad3)',
+        d: 'M 10,60 V 4 h 18 c 12,0 20,6 20,16 c 0,10 -8,16 -20,16 H 10 M 28,36 L 48,60',
+        className: 'dash'
+    }
+];
+
 const Loader1 = () => {
     return (
         <StyledWrapper>
@@ -8,12 +29,12 @@ const Loader1 = () => {
                 <svg height={0} width={0} viewBox="0 0 64 64" className="absolute">
                     <defs xmlns="http://www.w3.org/2000/svg">
                         <linearGradient gradientUnits="userSpaceOnUse" y2={2} x2={0} y1={62} x1={0} id="grad1">
-                            <stop stopColor="#973BED" />
-                            <stop stopColor="#007CFF" offset={1} />
+                            <stop stopColor="#8b5cf6" />
+                            <stop stopColor="#06b6d4" offset={1} />
                         </linearGradient>
                         <linearGradient gradientUnits="userSpaceOnUse" y2={0} x2={0} y1={64} x1={0} id="grad2">
-                            <stop stopColor="#FFC800" />
-                            <stop stopColor="#F0F" offset={1} />
+                            <stop stopColor="#f59e0b" />
+                            <stop stopColor="#ec4899" offset={1} />
                             <animateTransform
                                 repeatCount="indefinite"
                                 keySplines=".42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1"
@@ -25,50 +46,33 @@ const Loader1 = () => {
                             />
                         </linearGradient>
                         <linearGradient gradientUnits="userSpaceOnUse" y2={2} x2={0} y1={62} x1={0} id="grad3">
-                            <stop stopColor="#00E0ED" />
-                            <stop stopColor="#00DA72" offset={1} />
+                            <stop stopColor="#10b981" />
+                            <stop stopColor="#00f0ff" offset={1} />
                         </linearGradient>
                     </defs>
                 </svg>
 
-                {/* Letter D */}
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height={64} width={64} className="inline-block">
-                    <path
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        strokeWidth={10}
-                        stroke="url(#grad1)"
-                        d="M 8,4 h 15 c 15,0 28,10 28,28 c 0,18 -13,28 -28,28 h -15 z"
-                        className="dash"
-                        pathLength={360}
-                    />
-                </svg>
-
-                {/* Letter C (Circle) */}
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height={64} width={64} className="inline-block">
-                    <path
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        strokeWidth={10}
-                        stroke="url(#grad2)"
-                        d="M 32 32 m 0 -27 a 27 27 0 1 1 0 54 a 27 27 0 1 1 0 -54"
-                        className="spin"
-                        pathLength={360}
-                    />
-                </svg>
-
-                {/* Letter R */}
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height={64} width={64} className="inline-block">
-                    <path
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        strokeWidth={10}
-                        stroke="url(#grad3)"
-                        d="M 10,60 V 4 h 18 c 12,0 20,6 20,16 c 0,10 -8,16 -20,16 H 10 M 28,36 L 48,60"
-                        className="dash"
-                        pathLength={360}
-                    />
-                </svg>
+                {LETTERS.map(({ key, grad, d, className }) => (
+                    <svg
+                        key={key}
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 64 64"
+                        height={64}
+                        width={64}
+                        className="inline-block"
+                    >
+                        <path
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            strokeWidth={10}
+                            stroke={grad}
+                            d={d}
+                            className={className}
+                            pathLength={360}
+                        />
+                    </svg>
+                ))}
             </div>
         </StyledWrapper>
     );

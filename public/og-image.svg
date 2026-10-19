@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0c0a09"/>
+  <!-- Ambient Red Top Radial Glow -->
+  <circle cx="600" cy="0" r="450" fill="#dc2626" fill-opacity="0.18"/>
+  <circle cx="950" cy="400" r="300" fill="#dc2626" fill-opacity="0.08"/>
+
+  <!-- Border Frame -->
+  <rect x="24" y="24" width="1152" height="582" rx="20" stroke="#292524" stroke-width="2"/>
+
+  <!-- Terminal Icon Badge -->
+  <rect x="96" y="96" width="64" height="64" rx="16" fill="#1c1917" stroke="#292524" stroke-width="2"/>
+  <path d="M116 116L128 128L116 140" stroke="#dc2626" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M132 140H144" stroke="#faf8f5" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Status Pill -->
+  <rect x="180" y="108" width="220" height="40" rx="20" fill="#1c1917" stroke="#292524" stroke-width="1.5"/>
+  <circle cx="204" cy="128" r="5" fill="#dc2626"/>
+  <text x="222" y="133" fill="#a8a29e" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="500">Available for projects</text>
+
+  <!-- Main Headline -->
+  <text x="96" y="250" fill="#faf8f5" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="58" font-weight="800">Denny Charles Raj<tspan fill="#dc2626">.</tspan></text>
+  <text x="96" y="315" fill="#e7e5e4" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="34" font-weight="600">Full Stack Developer &amp; UI Architect</text>
+
+  <!-- Subtitle -->
+  <text x="96" y="380" fill="#a8a29e" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="22" font-weight="400">Crafting resilient architectures, high-performance web systems,</text>
+  <text x="96" y="415" fill="#a8a29e" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="22" font-weight="400">and refined digital products with modern technologies.</text>
+
+  <!-- Tags / Skills Proof Strip -->
+  <rect x="96" y="490" width="180" height="42" rx="10" fill="#1c1917" stroke="#292524"/>
+  <text x="186" y="517" text-anchor="middle" fill="#fca5a5" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600">React 19 &amp; Vite</text>
+
+  <rect x="292" y="490" width="190" height="42" rx="10" fill="#1c1917" stroke="#292524"/>
+  <text x="387" y="517" text-anchor="middle" fill="#fca5a5" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600">Node.js &amp; Express</text>
+
+  <rect x="498" y="490" width="150" height="42" rx="10" fill="#1c1917" stroke="#292524"/>
+  <text x="573" y="517" text-anchor="middle" fill="#fca5a5" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600">MongoDB</text>
+
+  <rect x="664" y="490" width="170" height="42" rx="10" fill="#1c1917" stroke="#292524"/>
+  <text x="749" y="517" text-anchor="middle" fill="#fca5a5" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600">Tailwind CSS v4</text>
+</svg>

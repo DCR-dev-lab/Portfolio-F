@@ -1,1 +1,89 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: #0c0a09;
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: #0c0a09;
+    color: #faf8f5;
+    font-family: var(--font-sans);
+    letter-spacing: -0.015em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em;
+  }
+
+  ::selection {
+    background-color: #dc2626;
+    color: #ffffff;
+  }
+}
+
+/* Custom Minimal Warm Obsidian Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0c0a09;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #292524;
+  border-radius: 9999px;
+  border: 2px solid #0c0a09;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #44403c;
+}
+
+/* Subtle Warm Dot Grid Pattern */
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(250, 248, 245, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Subtle Crimson Ambient Glow */
+.bg-radial-top {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(220, 38, 38, 0.08), transparent 70%);
+}
+
+/* Seamless Infinite Tech Drift Marquee */
+@keyframes marquee-drift {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-drift {
+  display: flex;
+  width: max-content;
+  animation: marquee-drift 40s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-drift:hover {
+  animation-play-state: paused;
+}

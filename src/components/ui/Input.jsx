@@ -1,4 +1,4 @@
-const Input = ({ label, error, ...props }) => {
+const Input = ({ label, error, className = "", ...props }) => {
     return (
         <div className="mb-4">
             {label && (
@@ -9,8 +9,7 @@ const Input = ({ label, error, ...props }) => {
 
             <input
                 {...props}
-                // Added "text-gray-800 placeholder-gray-400" to guarantee visibility
-                className="w-full px-3 py-2 border rounded bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border rounded bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 ${className}`}
             />
 
             {error && (

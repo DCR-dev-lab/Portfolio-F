@@ -2,8 +2,15 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../../services/api"
 import Cookies from "js-cookie"
+import usePageSEO from "../../hooks/usePageSEO"
 
 const AdminLogin = () => {
+    usePageSEO({
+        title: "Admin Access",
+        description: "Restricted administrative access point.",
+        noindex: true,
+    });
+
     const [key, setKey] = useState("")
     const [error, setError] = useState("")
     const [disabled, setDisabled] = useState(false)

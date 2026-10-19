@@ -1,13 +1,13 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const normalizeBaseUrl = (value = "http://localhost:3000/api") => {
+const normalizeBaseUrl = (value = "http://localhost:3005/api") => {
   const trimmed = value.replace(/\/+$/, "");
   return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
 };
 
 const api = axios.create({
-  baseURL: normalizeBaseUrl(import.meta.env.VITE_API_URL || "http://localhost:3000/api"),
+  baseURL: normalizeBaseUrl(import.meta.env.VITE_API_URL || "http://localhost:3005/api"),
 });
 
 api.interceptors.request.use((config) => {
