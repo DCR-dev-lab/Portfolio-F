@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import Navbar from "../common/Navbar";
 import Footer from "../common/Footer";
 import ParticleStage from "../particles/ParticleStage";
+import CursorFX from "../common/CursorFX";
 
 /**
  * PublicLayout
@@ -27,6 +28,8 @@ const PublicLayout = ({ children, withAmbient = true }) => {
             </main>
 
             <Footer />
+
+            <CursorFX />
         </div>
     );
 };

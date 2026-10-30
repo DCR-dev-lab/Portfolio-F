@@ -13,6 +13,7 @@ import { registerHeading, subscribe, getStatus } from "./particleRegistry";
 const ParticleHeading = ({
   text,
   as: Tag = "h2",
+  id,
   className = "",
   align = "center", // "center" | "left"
   splitOnMobile = false, // hero name: 3 lines on phones
@@ -35,7 +36,7 @@ const ParticleHeading = ({
       ref={ref}
       className={`${className} ${failed ? `flex items-center ${align === "left" ? "justify-start" : "justify-center"}` : ""}`}
     >
-      <Tag className={failed ? fallbackClassName : "sr-only"}>{text}</Tag>
+      <Tag id={id} className={failed ? fallbackClassName : "sr-only"}>{text}</Tag>
     </div>
   );
 };

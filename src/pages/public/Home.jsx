@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 
 import Hero from "../../components/profile/Hero";
 import AboutMe from "../../components/profile/AboutMe";
@@ -30,7 +29,7 @@ const Home = () => {
   const [profile, setProfile] = useState(null);
   const [projects, setProjects] = useState([]);
   const [skills, setSkills] = useState([]);
-  const [perCategory, setPerCategory] = useState(6);
+  const [perCategory, setPerCategory] = useState(8);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [slow, setSlow] = useState(false);
@@ -53,8 +52,8 @@ const Home = () => {
       setProfile(profileData);
 
       // How many to show comes from the profile settings (admin-editable), with safe limits
-      const projectsLimit = readCount(profileData?.homeProjectsCount, 5, 2, 6);
-      setPerCategory(readCount(profileData?.homeSkillsPerCategory, 6, 3, 10));
+      const projectsLimit = readCount(profileData?.homeProjectsCount, 7, 3, 8);
+      setPerCategory(readCount(profileData?.homeSkillsPerCategory, 8, 4, 12));
 
       const allProjects =
         projectsRes.status === "fulfilled" ? (projectsRes.value.data ?? []) : [];
@@ -112,18 +111,15 @@ const Home = () => {
         </div>
       )}
 
-      {!loaderGone &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            className={`fixed inset-0 z-[99999] flex items-center justify-center bg-[#0c0a09] transition-opacity duration-700 ease-out ${
-              loading ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
-          >
-            <PageLoader message={slow ? "Waking things up…" : undefined} />
-          </div>,
-          document.body
-        )}
+      {!loaderGone && (
+        <div
+          className={`fixed inset-0 z-40 transition-opacity duration-700 ease-out ${
+            loading ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
+          <PageLoader message={slow ? "Waking things up…" : undefined} />
+        </div>
+      )}
     </>
   );
 };

@@ -1,181 +1,177 @@
-import {
-  ArrowUpRight,
-  Code2,
-  UserRound,
-  Cpu,
-  MapPin,
-  Terminal,
-} from "lucide-react";
-
+import { ArrowUpRight, MapPin } from "lucide-react";
 import useScrollReveal from "../../hooks/useScrollReveal";
-import ParticleHeading from "../particles/ParticleHeading";
 
+/**
+ * AboutMe
+ * Intentional editorial stillness — the deliberate breath between Hero and Projects.
+ * One large display-scale statement, maximum obsidian space, one crimson accent.
+ * No cards, no badges, no pillar lists. The whitespace is the design.
+ */
 const AboutMe = ({ about, profile }) => {
-  const [sectionRef, isVisible] = useScrollReveal({
-    threshold: 0.15,
-  });
-
-  const corePillars = [
-    {
-      num: "01",
-      title: "Logical Problem Solving",
-      icon: Cpu,
-    },
-    {
-      num: "02",
-      title: "Frontend & User Experience",
-      icon: Code2,
-    },
-    {
-      num: "03",
-      title: "Clean & Maintainable Code",
-      icon: Terminal,
-    },
-  ];
+  const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
 
   const location = profile?.location || "Tamil Nadu, India";
 
-  const narrativeText =
+  // The display statement — pulled from profile or falls back to the brand voice
+  const displayStatement =
     about ||
-    "I'm a developer with a background in mathematics who enjoys turning complex problems into practical web applications. I approach development with logical thinking, attention to detail, and a focus on building intuitive user experiences.\n\nThrough hands-on projects, I'm continuously improving my skills in frontend development, backend systems, and writing maintainable code. I enjoy learning new technologies and turning ideas into products people can actually use.";
+    "I build fast, resilient web products — from pixel-perfect interfaces to the systems that power them.";
 
-  const revealClass = (delay = "") =>
-    `transition-all duration-700 motion-reduce:transition-none ${delay} ${
-      isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
-    }`;
+  // Split into lines for staggered reveal.
+  // Preserve natural breaks by splitting on em-dash or comma boundaries.
+  const lines = splitIntoLines(displayStatement);
+
+  // Two-line bio beneath the statement — compact, metadata-like
+  const bioLine1 = profile?.shortIntro
+    ? profile.shortIntro.split(".")[0]?.trim()
+    : "Developer with a background in mathematics";
+  const bioLine2 = "Focused on performance, clean architecture & DX.";
+
+  const delay = (ms) =>
+    isVisible
+      ? { opacity: 1, transform: "translateY(0)", transition: `opacity 0.8s ease ${ms}ms, transform 0.8s ease ${ms}ms` }
+      : { opacity: 0, transform: "translateY(28px)" };
 
   return (
     <section
       ref={sectionRef}
       data-section="about"
       aria-labelledby="about-heading"
-      className="relative min-h-[100dvh] py-16 md:py-24 px-5 sm:px-8 lg:px-10 bg-transparent border-t border-stone-800/40 overflow-hidden flex flex-col justify-center"
+      className="relative min-h-[100dvh] flex flex-col justify-center bg-transparent border-t border-stone-800/40 px-6 sm:px-10 lg:px-16 py-20 md:py-28 overflow-hidden"
     >
-      <div className="relative max-w-6xl mx-auto w-full">
-        {/* Section Header */}
-        <div className={`${revealClass()} mb-10 md:mb-12`}>
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-900/60 border border-stone-800/80">
-              <UserRound
-                aria-hidden="true"
-                className="w-3.5 h-3.5 text-red-400"
-              />
-              <span className="text-xs font-mono tracking-wide text-stone-300">
-                WHO I AM
-              </span>
-            </div>
+      <div className="relative max-w-5xl mx-auto w-full">
 
-            <div className="flex items-center gap-2 text-xs font-mono text-stone-400">
-              <MapPin aria-hidden="true" className="w-3.5 h-3.5 text-red-400" />
-
-              <span>{location}</span>
-            </div>
-          </div>
-
-          <ParticleHeading
-            text="About"
-            align="left"
-            className="w-[min(92vw,460px)] h-[55px] sm:h-[65px] md:h-[75px]"
-          />
+        {/* Top metadata line */}
+        <div
+          className="flex items-center justify-between mb-14 md:mb-20"
+          style={delay(0)}
+        >
+          <span className="text-[11px] font-mono tracking-[0.18em] uppercase text-stone-500">
+            Who I am
+          </span>
+          <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-wide text-stone-500">
+            <MapPin aria-hidden="true" className="w-3 h-3 text-stone-600" />
+            {location}
+          </span>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
-          {/* Left Column: Headline and Core Pillars */}
-          <div className={`${revealClass("delay-100")} lg:col-span-6`}>
-            <div className="mb-8">
-              <span className="block mb-3 text-[11px] font-mono uppercase tracking-widest text-red-400">
-                My Approach
-              </span>
-
-              <h2
-                id="about-heading"
-                className="text-xl sm:text-2xl lg:text-[26px] font-semibold tracking-[-0.02em] text-[#faf8f5] leading-snug"
+        {/* Large display statement — the centrepiece */}
+        <div className="mb-16 md:mb-24">
+          {lines.map((line, i) => {
+            const { text, accent } = parseAccent(line);
+            return (
+              <div
+                key={i}
+                style={delay(120 + i * 110)}
+                className="overflow-hidden"
               >
-                Building useful web experiences through{" "}
-                <span className="text-red-400">thoughtful engineering.</span>
-              </h2>
-            </div>
-
-            <div className="border-t border-white/[0.08]">
-              {corePillars.map((pillar) => {
-                const Icon = pillar.icon;
-
-                return (
-                  <div
-                    key={pillar.num}
-                    className="group flex items-center gap-4 py-3.5 border-b border-white/[0.06] transition-colors duration-300 hover:border-red-500/30"
-                  >
-                    <span className="text-xs font-mono font-medium text-red-400/90">
-                      {pillar.num}
-                    </span>
-
-                    <Icon
-                      aria-hidden="true"
-                      className="w-4 h-4 shrink-0 text-stone-500 group-hover:text-red-400 transition-colors duration-300"
-                    />
-
-                    <span className="text-sm font-medium tracking-tight text-stone-200 group-hover:text-white transition-colors duration-300">
-                      {pillar.title}
-                    </span>
-
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-stone-700/80 group-hover:bg-red-400 transition-colors duration-300" />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right Column: Narrative and Resume */}
-          <div className={`${revealClass("delay-200")} lg:col-span-6 lg:pt-1`}>
-            <div className="mb-8">
-              <span className="block mb-4 text-[11px] font-mono uppercase tracking-widest text-stone-400">
-                My Story
-              </span>
-
-              <div className="space-y-4">
-                {(typeof narrativeText === "string"
-                  ? narrativeText.split("\n\n").filter(Boolean)
-                  : [narrativeText]
-                ).map((paragraph, idx) => (
-                  <p
-                    key={idx}
-                    className={
-                      idx === 0
-                        ? "text-stone-200 text-sm sm:text-[15px] leading-relaxed font-normal"
-                        : "text-stone-400 text-xs sm:text-sm leading-relaxed"
-                    }
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-            </div>
-
-            {/* Resume Link */}
-            {profile?.resumeUrl && (
-              <div className="pt-6 border-t border-white/[0.08]">
-                <a
-                  href={profile.resumeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="View resume in a new tab"
-                  className="group inline-flex items-center gap-2.5 rounded-xl border border-stone-800 bg-stone-900/60 px-4 py-2.5 text-xs font-mono font-medium text-stone-300 transition-all duration-300 hover:border-red-500/40 hover:text-white hover:bg-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                <p
+                  id={i === 0 ? "about-heading" : undefined}
+                  className="text-[clamp(2rem,5.5vw,4.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#faf8f5] motion-reduce:transition-none"
                 >
-                  <span>View Resume</span>
-
-                  <ArrowUpRight
-                    aria-hidden="true"
-                    className="w-3.5 h-3.5 text-stone-400 group-hover:text-red-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300"
-                  />
-                </a>
+                  {text}
+                  {accent && (
+                    <span className="text-red-400">{accent}</span>
+                  )}
+                </p>
               </div>
-            )}
+            );
+          })}
+        </div>
+
+        {/* Bottom row: compact bio + resume */}
+        <div
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-8 border-t border-stone-800/50"
+          style={delay(120 + lines.length * 110 + 80)}
+        >
+          {/* Two-line bio */}
+          <div className="space-y-1.5">
+            <p className="text-[13px] font-mono text-stone-400 leading-relaxed">
+              {bioLine1}.
+            </p>
+            <p className="text-[13px] font-mono text-stone-500 leading-relaxed">
+              {bioLine2}
+            </p>
           </div>
+
+          {/* Resume link — minimal */}
+          {profile?.resumeUrl && (
+            <a
+              href={profile.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View resume in a new tab"
+              className="group inline-flex items-center gap-2 text-[13px] font-mono text-stone-400 hover:text-[#faf8f5] transition-colors duration-300 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            >
+              <span>View Resume</span>
+              <ArrowUpRight
+                aria-hidden="true"
+                className="w-3.5 h-3.5 text-stone-500 group-hover:text-red-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300"
+              />
+            </a>
+          )}
         </div>
       </div>
     </section>
   );
 };
+
+/**
+ * Splits a long statement into display lines.
+ * Breaks on " — ", " - ", "," or every ~5 words for natural rhythm.
+ */
+function splitIntoLines(text) {
+  // Try natural break points first
+  const naturalBreaks = text.split(/\s*[—–]\s*/);
+  if (naturalBreaks.length >= 2) {
+    // Further split the last segment if too long
+    return naturalBreaks.flatMap((chunk) => splitByLength(chunk.trim(), 7));
+  }
+  // Fallback: split by comma
+  const commaBreaks = text.split(/,\s*/);
+  if (commaBreaks.length >= 2) {
+    return commaBreaks.flatMap((chunk) => splitByLength(chunk.trim(), 7));
+  }
+  // Final fallback: word-count chunks
+  return splitByLength(text, 6);
+}
+
+/** Splits a text string into chunks of at most `maxWords` words */
+function splitByLength(text, maxWords) {
+  const words = text.split(" ");
+  const chunks = [];
+  for (let i = 0; i < words.length; i += maxWords) {
+    chunks.push(words.slice(i, i + maxWords).join(" "));
+  }
+  return chunks;
+}
+
+/**
+ * Identifies if a line contains a word/phrase to accent in crimson.
+ * Returns { text, accent } where accent is appended in red.
+ */
+function parseAccent(line) {
+  // Accent specific engineering words that carry meaning
+  const accentWords = [
+    "pixel-perfect",
+    "pixel‑perfect",
+    "resilient",
+    "precision",
+    "fast,",
+    "fast",
+  ];
+  const lower = line.toLowerCase();
+  for (const word of accentWords) {
+    const idx = lower.indexOf(word);
+    if (idx !== -1) {
+      const before = line.slice(0, idx);
+      const accent = line.slice(idx, idx + word.length);
+      const after = line.slice(idx + word.length);
+      // Only accent if it looks good (accent + rest on same line)
+      return { text: before, accent: accent + after };
+    }
+  }
+  return { text: line, accent: null };
+}
 
 export default AboutMe;

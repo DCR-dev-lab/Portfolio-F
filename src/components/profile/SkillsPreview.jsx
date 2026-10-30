@@ -3,22 +3,21 @@ import { Link } from "react-router-dom";
 import useScrollReveal from "../../hooks/useScrollReveal";
 import EmptyState from "../ui/EmptyState";
 import ParticleHeading from "../particles/ParticleHeading";
-import SkillCategoryCards from "./SkillCategoryCards";
-import TechMarquee from "./TechMarquee";
+import SkillStack from "./SkillStack";
 
 /**
  * SkillsPreview
- * `skills` should be the full list: the cards group it by category and show the top
- * `perCategory` skills in each (set from the API / profile settings).
+ * Showcases core technical domains with a clean, scroll-linked stacking deck.
+ * NOTE: this section must not use `overflow-hidden`, or the sticky stack stops working.
  */
-const SkillsPreview = ({ skills, perCategory = 6 }) => {
+const SkillsPreview = ({ skills, perCategory = 8 }) => {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.1 });
   const hasSkills = skills && skills.length > 0;
 
   return (
     <section
       ref={sectionRef}
-      className="relative py-24 md:py-32 px-6 bg-transparent border-t border-stone-800/40 overflow-hidden"
+      className="relative py-24 md:py-32 px-4 sm:px-6 bg-transparent border-t border-stone-800/40 overflow-x-clip"
     >
       <div className="relative max-w-6xl mx-auto">
         <div
@@ -28,7 +27,9 @@ const SkillsPreview = ({ skills, perCategory = 6 }) => {
         >
           <div className="inline-flex items-center gap-2 px-3.5 py-1 mb-3 rounded-full bg-stone-900/70 border border-stone-800">
             <Code2 className="w-3.5 h-3.5 text-red-400" />
-            <span className="text-xs font-mono tracking-wide text-stone-300">Core Capabilities</span>
+            <span className="text-xs font-mono tracking-wide text-stone-300">
+              Core Capabilities
+            </span>
           </div>
 
           <ParticleHeading
@@ -37,21 +38,22 @@ const SkillsPreview = ({ skills, perCategory = 6 }) => {
           />
 
           <p className="mt-3 text-stone-400 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-            Technologies and tools I specialize in to build fast, robust web applications.
+            Technologies and tools I specialize in to build fast, robust web
+            applications.
           </p>
         </div>
 
         {hasSkills ? (
           <>
-            <SkillCategoryCards skills={skills} perCategory={perCategory} revealed={isVisible} />
+            {/* Stacking deck tailored to max-w-4xl so background particle atmosphere breathes */}
+            <div className="max-w-4xl mx-auto">
+              <SkillStack
+                skills={skills}
+                perCategory={perCategory}
+              />
+            </div>
 
-            <TechMarquee skills={skills} className="mt-12 md:mt-16" />
-
-            <div
-              className={`text-center mt-12 transition-all duration-700 delay-200 ${
-                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-            >
+            <div className="text-center mt-12 md:mt-16">
               <Link
                 to="/skills"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-stone-900/70 border border-stone-800 text-stone-200 font-medium text-sm hover:border-red-500/40 hover:text-red-400 transition-all hover:scale-105 active:scale-95 group"

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { createSim } from "./particleSim";
+import { createSim, layoutFromBase } from "./particleSim";
 import { getEntries, setStatus } from "./particleRegistry";
 
 /**
@@ -38,12 +38,12 @@ const FRAG = `
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (d > 0.5) discard;
-    gl_FragColor = vec4(vColor, smoothstep(0.5, 0.1, d) * vAlpha);
+    gl_FragColor = vec4(vColor, smoothstep(0.5, 0.3, d) * vAlpha);
   }
 `;
 
 /* ---------- text -> evenly spaced points, relative to the heading box centre ---------- */
-const sampleHeading = (entry, boxW, boxH) => {
+const sampleBase = (entry, boxW, boxH) => {
   const mobile = window.innerWidth < 768;
   const words = entry.text.split(/\s+/).filter(Boolean);
   const lines =
@@ -75,7 +75,7 @@ const sampleHeading = (entry, boxW, boxH) => {
   const pxScale = Math.min((boxW * 0.96) / c.width, (boxH * 0.96) / c.height);
   const cssArea = area * pxScale * pxScale;
   const gap = mobile ? 2.3 : 2.0;
-  const cap = mobile ? entry.capMobile ?? 1400 : entry.cap ?? 2400;
+  const cap = mobile ? (entry.capMobile ?? 1400) : (entry.cap ?? 2400);
   const N = clamp(Math.round(cssArea / (gap * gap)), 250, cap);
 
   const step = Math.max(1, Math.sqrt(area / N));
@@ -94,18 +94,27 @@ const sampleHeading = (entry, boxW, boxH) => {
     [order[k], order[r]] = [order[r], order[k]];
   }
 
-  const tW = c.width * pxScale;
-  const ox = entry.align === "left" ? -boxW / 2 + tW / 2 - 20 * pxScale : 0;
-  const lx = new Float32Array(N);
-  const ly = new Float32Array(N);
+  const gx = new Float32Array(N);
+  const gy = new Float32Array(N);
   const lz = new Float32Array(N);
   for (let k = 0; k < N; k++) {
     const j = (k < nCand ? order[k] : Math.floor(Math.random() * nCand)) * 2;
-    lx[k] = ox + (cand[j] + (Math.random() - 0.5) * step * 0.5 - c.width / 2) * pxScale;
-    ly[k] = (cand[j + 1] + (Math.random() - 0.5) * step * 0.5 - c.height / 2) * pxScale;
+    gx[k] = cand[j] + (Math.random() - 0.5) * step * 0.5;
+    gy[k] = cand[j + 1] + (Math.random() - 0.5) * step * 0.5;
     lz[k] = (Math.random() - 0.5) * 28;
   }
-  return { N, lx, ly, lz, dotR: clamp(Math.sqrt(cssArea / N) * 0.6, 0.7, 2.2) };
+  // positions are NOT computed here: they depend on the box size, which changes when the window does
+  return {
+    N,
+    cw: c.width,
+    ch: c.height,
+    area,
+    gx,
+    gy,
+    lz,
+    sampledW: boxW,
+    sampledH: boxH,
+  };
 };
 
 const ParticleStage = () => {
@@ -117,13 +126,19 @@ const ParticleStage = () => {
 
     let renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
+      renderer = new THREE.WebGLRenderer({
+        antialias: false,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
     } catch {
       setStatus("failed");
       return;
     }
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     const mobile = window.innerWidth < 768;
     const P = mobile ? 5200 : 10000;
     const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
@@ -137,16 +152,26 @@ const ParticleStage = () => {
 
     const sim = createSim({ P, W, H, reduced });
 
-    const palette = [new THREE.Color("#faf8f5"), new THREE.Color("#ef4444"), new THREE.Color("#fca5a5")];
+    const palette = [
+      new THREE.Color("#faf8f5"),
+      new THREE.Color("#ef4444"),
+      new THREE.Color("#fca5a5"),
+    ];
     const colors = new Float32Array(P * 3);
     for (let i = 0; i < P; i++) {
       const c = palette[sim.col[i]];
       colors.set([c.r, c.g, c.b], i * 3);
     }
     const geo = new THREE.BufferGeometry();
-    const posAttr = new THREE.BufferAttribute(sim.pos, 3).setUsage(THREE.DynamicDrawUsage);
-    const sizeAttr = new THREE.BufferAttribute(sim.size, 1).setUsage(THREE.DynamicDrawUsage);
-    const alphaAttr = new THREE.BufferAttribute(sim.alpha, 1).setUsage(THREE.DynamicDrawUsage);
+    const posAttr = new THREE.BufferAttribute(sim.pos, 3).setUsage(
+      THREE.DynamicDrawUsage,
+    );
+    const sizeAttr = new THREE.BufferAttribute(sim.size, 1).setUsage(
+      THREE.DynamicDrawUsage,
+    );
+    const alphaAttr = new THREE.BufferAttribute(sim.alpha, 1).setUsage(
+      THREE.DynamicDrawUsage,
+    );
     geo.setAttribute("position", posAttr);
     geo.setAttribute("aSize", sizeAttr);
     geo.setAttribute("aAlpha", alphaAttr);
@@ -172,18 +197,54 @@ const ParticleStage = () => {
     const camera = new THREE.Camera(); // unused: the shader maps pixels straight to the screen
 
     /* ---- headings: measure + cache their point samples ---- */
-    const cache = new Map();
+    const cache = new Map(); // entry -> { textKey, base, lay }
     const getSample = (entry, w, h) => {
-      const key = `${entry.text}|${Math.round(w)}|${Math.round(h)}|${window.innerWidth < 768 ? 1 : 0}|${entry.align}`;
-      const hit = cache.get(entry);
-      if (hit && hit.key === key) return hit;
-      const s = sampleHeading(entry, w, h);
-      if (!s) return null;
-      const out = { key, ...s };
-      cache.set(entry, out);
-      return out;
+      const mobile = window.innerWidth < 768 ? 1 : 0;
+      const textKey = `${entry.text}|${mobile}|${entry.align}|${entry.splitOnMobile ? 1 : 0}`;
+      let rec = cache.get(entry);
+      const rw = rec ? w / rec.base.sampledW : 1;
+      const rh = rec ? h / rec.base.sampledH : 1;
+      if (
+        !rec ||
+        rec.textKey !== textKey ||
+        rw < 0.6 ||
+        rw > 1.7 ||
+        rh < 0.6 ||
+        rh > 1.7
+      ) {
+        const base = sampleBase(entry, w, h);
+        if (!base) return null;
+        rec = { textKey, base, lay: null };
+        cache.set(entry, rec);
+      }
+      if (!rec.lay || rec.lay.w !== w || rec.lay.h !== h) {
+        rec.lay = { w, h, ...layoutFromBase(rec.base, w, h, entry.align) };
+      }
+      // `key` stays the same while only the SIZE changes, so the simulation keeps the particles it has
+      return {
+        key: rec.textKey,
+        N: rec.base.N,
+        lz: rec.base.lz,
+        lx: rec.lay.lx,
+        ly: rec.lay.ly,
+        dotR: rec.lay.dotR,
+      };
     };
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => cache.clear());
+    let fontsOk = !(document.fonts && document.fonts.load);
+    if (!fontsOk) {
+      const open = () => {
+        if (fontsOk) return;
+        fontsOk = true;
+        cache.clear();
+      };
+      Promise.race([
+        Promise.all([
+          document.fonts.load(`800 120px ${FONT}`),
+          document.fonts.ready,
+        ]),
+        new Promise((resolve) => setTimeout(resolve, 1500)), // never wait longer than this
+      ]).then(open, open);
+    }
 
     /* ---- pointer + shatter ---- */
     const pointer = { x: -1e5, y: -1e5, tilt: 0 };
@@ -197,10 +258,17 @@ const ParticleStage = () => {
     };
     const onClick = (e) => {
       if (reduced) return;
-      if (e.target.closest && e.target.closest("a, button, input, textarea, select, [role='button']")) return;
+      if (
+        e.target.closest &&
+        e.target.closest(
+          "a, button, input, textarea, select, [role='button'], [data-no-shatter]"
+        )
+      )
+        return;
       for (const entry of getEntries()) {
         const section = entry.el.closest("section") || entry.el.parentElement;
-        if (section && section.contains(e.target) && sim.isOn(entry.id)) sim.shatter(entry.id, e.clientX, e.clientY);
+        if (section && section.contains(e.target) && sim.isOn(entry.id))
+          sim.shatter(entry.id, e.clientX, e.clientY);
       }
     };
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -208,7 +276,7 @@ const ParticleStage = () => {
     window.addEventListener("click", onClick);
     document.documentElement.addEventListener("mouseleave", onLeave);
 
-    /* ---- resize (ignore phone address-bar jitter) ---- */
+    /* ---- resize: instant for desktop & fullscreen, debounced for mobile ---- */
     let timer;
     const apply = () => {
       W = document.documentElement.clientWidth || window.innerWidth;
@@ -219,11 +287,16 @@ const ParticleStage = () => {
     };
     const onResize = () => {
       const w = document.documentElement.clientWidth || window.innerWidth;
-      if (w === W && Math.abs(window.innerHeight - H) < 140) return;
+      const h = window.innerHeight;
+      if (w === W && h === H) return;
+      // On mobile touch devices only, ignore minor vertical jitter (< 70px) from address-bar toggles
+      const isMobileTouch = window.innerWidth < 768 && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+      if (isMobileTouch && w === W && Math.abs(h - H) < 70) return;
       clearTimeout(timer);
-      timer = setTimeout(apply, 150);
+      timer = setTimeout(apply, 40);
     };
     window.addEventListener("resize", onResize);
+    document.addEventListener("fullscreenchange", apply);
 
     /* ---- loop ---- */
     let raf = 0;
@@ -235,6 +308,7 @@ const ParticleStage = () => {
 
       const list = [];
       for (const entry of getEntries()) {
+        if (!fontsOk) break;
         const el = entry.el;
         if (!el.isConnected) continue;
         const r = el.getBoundingClientRect();
@@ -250,7 +324,13 @@ const ParticleStage = () => {
           lz: s.lz,
           dotR: s.dotR,
           intro: !!entry.intro,
-          rect: { left: r.left, top: r.top, width: r.width, height: r.height, bottom: r.bottom },
+          rect: {
+            left: r.left,
+            top: r.top,
+            width: r.width,
+            height: r.height,
+            bottom: r.bottom,
+          },
         });
       }
 
@@ -271,11 +351,13 @@ const ParticleStage = () => {
       window.removeEventListener("pointerup", onLeave);
       window.removeEventListener("click", onClick);
       window.removeEventListener("resize", onResize);
+      document.removeEventListener("fullscreenchange", apply);
       document.documentElement.removeEventListener("mouseleave", onLeave);
       geo.dispose();
       material.dispose();
       renderer.dispose();
-      if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
+      if (renderer.domElement.parentNode === mount)
+        mount.removeChild(renderer.domElement);
     };
   }, []);
 
