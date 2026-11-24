@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { CURTAIN_DEPTH } from "../profile/FeaturedProjects";
+import { createPortal } from "react-dom";
+import { CURTAIN_DEPTH } from "../../constants/layout";
 
 /**
  * CursorFX
@@ -99,6 +100,7 @@ const CursorFX = ({
     let lastRectTime = 0;
     let lastQueryTime = 0;
     let cachedMagEl = null;
+    let lastHoverTarget = null;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -129,15 +131,15 @@ const CursorFX = ({
     };
     dprMql.addEventListener?.("change", onDprChange);
 
-    // hide the system arrow only while our own cursor is showing
+    // Inject cursor-hiding style rule once, then toggle via class to prevent stylesheet thrashing
     const styleTag = document.createElement("style");
-    styleTag.textContent = `html, html *:not(input):not(textarea):not(select):not([contenteditable='true']) { cursor: none !important; }`;
+    styleTag.textContent = `html.cursor-fx-active, html.cursor-fx-active *:not(input):not(textarea):not(select):not([contenteditable='true']) { cursor: none !important; }`;
+    document.head.appendChild(styleTag);
     let nativeHidden = false;
     const setNativeHidden = (hide) => {
       if (hide === nativeHidden) return;
       nativeHidden = hide;
-      if (hide) document.head.appendChild(styleTag);
-      else styleTag.remove();
+      document.documentElement.classList.toggle("cursor-fx-active", hide);
     };
 
     const spawnEmbers = (x, y, speed) => {
@@ -202,28 +204,28 @@ const CursorFX = ({
         x,
         y,
         age: 0,
-        life: 0.42,
-        width: 150,
+        life: 0.35,
+        width: 120,
       });
 
-      const n = 10;
+      const n = 5;
       const sparks = Array.from({ length: n }, () => {
-        const angle = sparkAngle + (Math.random() - 0.5) * Math.PI * 0.9;
+        const angle = sparkAngle + (Math.random() - 0.5) * Math.PI * 0.7;
         return {
           a: angle,
-          d: 20 + Math.random() * 30,
-          len: 4 + Math.random() * 8,
+          d: 14 + Math.random() * 18,
+          len: 3 + Math.random() * 5,
         };
       });
       bursts.push({
         x,
         y,
         age: 0,
-        life: 0.38,
+        life: 0.28,
         sparks,
       });
 
-      spawnEmbers(x, y, 450);
+      spawnEmbers(x, y, 60);
       wake();
     };
 
@@ -270,6 +272,7 @@ const CursorFX = ({
       lastActiveTime = performance.now();
 
       const t = e.target;
+      lastHoverTarget = t;
       const nextOverText = !!(t.closest && t.closest(TEXTUAL));
       const nextHovering = !!(t.closest && t.closest(INTERACTIVE));
 
@@ -326,34 +329,63 @@ const CursorFX = ({
       visible = false;
       magImmersion = 0;
       wasInside = false;
+      lastHoverTarget = null;
       setNativeHidden(false);
       wake();
     };
 
-    // Scroll handler throttled via requestAnimationFrame to prevent layout thrashing
+    // Tells React/DOM listeners that the pointer left the old element when content
+    // scrolled away under a stationary mouse. React builds onMouseEnter/onMouseLeave
+    // from the native "mouseout" event, so one event with relatedTarget is enough.
+    const syncHoverTarget = (el) => {
+      if (el === lastHoverTarget) return;
+      const prev = lastHoverTarget;
+      lastHoverTarget = el;
+      if (!prev || !el || !prev.isConnected) return;
+      prev.dispatchEvent(
+        new MouseEvent("mouseout", {
+          bubbles: true,
+          clientX: mouse.x,
+          clientY: mouse.y,
+          relatedTarget: el,
+          view: window,
+        }),
+      );
+
+      // Force the browser's native C++ style engine to immediately clear CSS :hover
+      const interactiveEl = prev.closest ? prev.closest(INTERACTIVE) || prev : prev;
+      if (interactiveEl && interactiveEl.style) {
+        interactiveEl.style.pointerEvents = "none";
+        requestAnimationFrame(() => {
+          interactiveEl.style.removeProperty("pointer-events");
+        });
+      }
+    };
+
+    const resolveUnderPointer = () => {
+      if (!mouse.seen || !visible || mouse.x < 0 || mouse.y < 0) return;
+      const el = document.elementFromPoint(mouse.x, mouse.y);
+      syncHoverTarget(el);
+      overText = !!(el && el.closest && el.closest(TEXTUAL));
+      hovering = !!(el && el.closest && el.closest(INTERACTIVE));
+      setNativeHidden(hideNative && !overText);
+      updateMagneticState(mouse.x, mouse.y);
+      wake();
+    };
+
     let scrollScheduled = false;
+    let scrollEndTimer = 0;
     const onScroll = () => {
-      if (scrollScheduled) return;
-      scrollScheduled = true;
-      requestAnimationFrame(() => {
-        scrollScheduled = false;
-        sectionRect = null;
-        if (!mouse.seen || mouse.x < 0 || mouse.y < 0) return;
-        const el = document.elementFromPoint(mouse.x, mouse.y);
-        if (el) {
-          const nextOverText = !!(el.closest && el.closest(TEXTUAL));
-          const nextHovering = !!(el.closest && el.closest(INTERACTIVE));
-          overText = nextOverText;
-          hovering = nextHovering;
-          setNativeHidden(hideNative && !overText);
-        } else {
-          overText = false;
-          hovering = false;
-          setNativeHidden(hideNative);
-        }
-        updateMagneticState(mouse.x, mouse.y);
-        wake();
-      });
+      sectionRect = null;
+      if (!scrollScheduled) {
+        scrollScheduled = true;
+        requestAnimationFrame(() => {
+          scrollScheduled = false;
+          resolveUnderPointer();
+        });
+      }
+      clearTimeout(scrollEndTimer);
+      scrollEndTimer = setTimeout(resolveUnderPointer, 50);
     };
 
     const frame = (now) => {
@@ -619,8 +651,10 @@ const CursorFX = ({
     return () => {
       cancelAnimationFrame(raf);
       cancelAnimationFrame(resizeRaf);
+      clearTimeout(scrollEndTimer);
       dprMql.removeEventListener?.("change", onDprChange);
       setNativeHidden(false);
+      styleTag.remove();
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
@@ -632,12 +666,16 @@ const CursorFX = ({
     };
   }, [active, mode, hideNative, trail]);
 
-  return (
+  if (typeof document === "undefined" || !document.body) return null;
+
+  return createPortal(
     <canvas
       ref={canvasRef}
+      role="presentation"
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[60] h-full w-full"
-    />
+      className="pointer-events-none fixed inset-0 z-[99999] h-full w-full"
+    />,
+    document.body
   );
 };
 

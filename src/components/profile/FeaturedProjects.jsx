@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import useScrollReveal from "../../hooks/useScrollReveal";
 import ParticleHeading from "../particles/ParticleHeading";
 import MagneticProjects from "./MagneticProjects";
+import { CURTAIN_DEPTH } from "../../constants/layout";
+
+export { CURTAIN_DEPTH };
 
 const FALLBACK_7_PROJECTS = [
   {
@@ -92,8 +95,6 @@ const FALLBACK_7_PROJECTS = [
   },
 ];
 
-export const CURTAIN_DEPTH = 96; // 96px corresponds to h-24
-
 const EMPTY_PROJECTS = [];
 
 /**
@@ -116,6 +117,7 @@ const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
     <section
       ref={sectionRef}
       data-magnetic-area
+      aria-labelledby="projects-heading"
       className="relative min-h-[100dvh] py-10 md:py-14 px-6 bg-transparent border-t border-stone-800/40 overflow-hidden flex flex-col justify-center"
     >
       {/* Volumetric Laser Curtain Threshold (Top Entry) */}
@@ -147,6 +149,7 @@ const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
             </div>
 
             <ParticleHeading
+              id="projects-heading"
               text="Projects"
               align="left"
               className="w-[min(92vw,480px)] h-[60px] sm:h-[75px] md:h-[85px]"
@@ -155,7 +158,7 @@ const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
 
           <Link
             to="/projects"
-            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900/70 border border-stone-800 text-stone-200 font-medium text-sm hover:border-red-500/40 hover:text-red-400 transition-all hover:scale-105 active:scale-95"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900/70 border border-stone-800 text-stone-200 font-medium text-sm hover:border-red-500/40 hover:text-red-400 transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
           >
             <span>View All Projects</span>
             <ArrowRight className="w-4 h-4 text-red-400 group-hover:translate-x-1 transition-transform" />

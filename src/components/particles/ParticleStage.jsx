@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { createSim, layoutFromBase } from "./particleSim";
-import { getEntries, setStatus } from "./particleRegistry";
+import { getEntries, setStatus, subscribe } from "./particleRegistry";
 
 /**
  * ParticleStage
@@ -284,6 +284,7 @@ const ParticleStage = () => {
       renderer.setSize(W, H);
       material.uniforms.uRes.value.set(W, H);
       sim.resize(W, H);
+      invalidateHeadingCache();
     };
     const onResize = () => {
       const w = document.documentElement.clientWidth || window.innerWidth;
@@ -301,19 +302,52 @@ const ParticleStage = () => {
     /* ---- loop ---- */
     let raf = 0;
     let last = performance.now();
+    // Cache heading positions in document-space to eliminate getBoundingClientRect() layout thrashing on every frame
+    const headingPosCache = new Map();
+
+    const invalidateHeadingCache = () => {
+      headingPosCache.clear();
+    };
+
+    const unsubRegistry = subscribe(() => {
+      invalidateHeadingCache();
+    });
+
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
       const dt = Math.min((now - last) / 1000, 0.033);
       last = now;
 
+      const currentScrollY = window.scrollY;
       const list = [];
       for (const entry of getEntries()) {
         if (!fontsOk) break;
         const el = entry.el;
-        if (!el.isConnected) continue;
-        const r = el.getBoundingClientRect();
-        if (r.bottom < -1.5 * H || r.top > 2.5 * H) continue; // far away: not worth sampling
-        const s = getSample(entry, el.offsetWidth, el.offsetHeight);
+        if (!el || !el.isConnected) {
+          headingPosCache.delete(entry.id);
+          continue;
+        }
+
+        let pos = headingPosCache.get(entry.id);
+        if (!pos || pos.width <= 0 || pos.height <= 0) {
+          const r = el.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0) {
+            pos = {
+              docTop: r.top + currentScrollY,
+              docLeft: r.left,
+              width: r.width,
+              height: r.height,
+            };
+            headingPosCache.set(entry.id, pos);
+          }
+        }
+        if (!pos || pos.width <= 0 || pos.height <= 0) continue;
+
+        const top = pos.docTop - currentScrollY;
+        const bottom = top + pos.height;
+        if (bottom < -1.5 * H || top > 2.5 * H) continue; // far away: not worth sampling
+
+        const s = getSample(entry, pos.width, pos.height);
         if (!s) continue;
         list.push({
           id: entry.id,
@@ -325,16 +359,16 @@ const ParticleStage = () => {
           dotR: s.dotR,
           intro: !!entry.intro,
           rect: {
-            left: r.left,
-            top: r.top,
-            width: r.width,
-            height: r.height,
-            bottom: r.bottom,
+            left: pos.docLeft,
+            top,
+            width: pos.width,
+            height: pos.height,
+            bottom,
           },
         });
       }
 
-      sim.step(dt, window.scrollY, list, pointer);
+      sim.step(dt, currentScrollY, list, pointer);
       posAttr.needsUpdate = true;
       sizeAttr.needsUpdate = true;
       alphaAttr.needsUpdate = true;
@@ -345,6 +379,7 @@ const ParticleStage = () => {
     setStatus("ready");
 
     return () => {
+      unsubRegistry();
       cancelAnimationFrame(raf);
       clearTimeout(timer);
       window.removeEventListener("pointermove", onMove);
@@ -362,9 +397,9 @@ const ParticleStage = () => {
   }, []);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-0" aria-hidden="true">
+    <div className="pointer-events-none fixed inset-0 z-0" aria-hidden="true" role="presentation">
       <div ref={mountRef} className="absolute inset-0" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,#0c0a09_100%)] opacity-60" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,var(--color-obsidian)_100%)] opacity-60" />
     </div>
   );
 };

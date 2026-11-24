@@ -10,7 +10,11 @@ let uid = 0;
 export const registerHeading = (cfg) => {
   const entry = { id: ++uid, ...cfg };
   entries.add(entry);
-  return () => entries.delete(entry);
+  listeners.forEach((l) => l());
+  return () => {
+    entries.delete(entry);
+    listeners.forEach((l) => l());
+  };
 };
 export const getEntries = () => entries;
 

@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { ExternalLink, Github } from "lucide-react";
 import portfolioPlaceholder from "../../assets/images/portfolio-placeholder.svg";
-
-const hasUrl = (u) => Boolean(u) && u !== "#";
+import SpotlightProjectContent from "./SpotlightProjectContent";
 
 /**
  * ExpandedProjects
@@ -86,65 +84,7 @@ const ExpandedProjects = ({ projects = [] }) => {
                                 on ? "translate-y-0 opacity-100 delay-300" : "pointer-events-none translate-y-4 opacity-0"
                             }`}
                         >
-                            {p.type && (
-                                <div className="mb-3 flex items-center gap-2">
-                                    <span className="h-px w-6 bg-red-500" />
-                                    <span className="font-mono text-[10px] uppercase tracking-widest text-red-400">{p.type}</span>
-                                </div>
-                            )}
-                            <h3 className="text-2xl font-bold leading-tight text-[#faf8f5] sm:text-3xl">{p.title}</h3>
-                            {p.shortDescription && (
-                                <p className="mt-2 line-clamp-3 max-w-md text-sm leading-relaxed text-stone-300">
-                                    {p.shortDescription}
-                                </p>
-                            )}
-                            {p.technologies?.length > 0 && (
-                                <div className="mt-4 flex flex-wrap gap-1.5">
-                                    {p.technologies.slice(0, 5).map((t) => (
-                                        <span
-                                            key={t}
-                                            className="rounded-md border border-stone-700/70 bg-stone-900/80 px-2.5 py-0.5 font-mono text-[11px] text-stone-300"
-                                        >
-                                            {t}
-                                        </span>
-                                    ))}
-                                    {p.technologies.length > 5 && (
-                                        <span className="rounded-md border border-stone-800 bg-stone-900/80 px-2 py-0.5 font-mono text-[11px] text-red-300">
-                                            +{p.technologies.length - 5}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                            {(hasUrl(p.projectUrl) || hasUrl(p.githubUrl)) && (
-                                <div className="mt-5 flex flex-wrap gap-2.5">
-                                    {hasUrl(p.projectUrl) && (
-                                        <a
-                                            href={p.projectUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            tabIndex={on ? 0 : -1}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-sm shadow-red-900/40 transition hover:bg-red-500 active:scale-95"
-                                        >
-                                            <ExternalLink className="h-3.5 w-3.5" />
-                                            Live Demo
-                                        </a>
-                                    )}
-                                    {hasUrl(p.githubUrl) && (
-                                        <a
-                                            href={p.githubUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            tabIndex={on ? 0 : -1}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="inline-flex items-center gap-1.5 rounded-full border border-stone-700 bg-stone-900/70 px-5 py-2 text-xs font-medium text-stone-200 transition hover:border-red-500/50 hover:text-white"
-                                        >
-                                            <Github className="h-3.5 w-3.5" />
-                                            Source
-                                        </a>
-                                    )}
-                                </div>
-                            )}
+                            <SpotlightProjectContent project={p} isOpen={on} maxTech={5} />
                         </div>
                     </article>
                 );

@@ -3,51 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { CategoryIcon } from "../cards/skill/CategoryIcon";
-
-/**
- * Domain engineering scope metadata
- */
-const getDomainMeta = (name = "") => {
-  const lower = name.toLowerCase();
-  if (lower.includes("front") || lower.includes("ui") || lower.includes("client")) {
-    return {
-      tag: "UI & CLIENT ARCHITECTURE",
-      description:
-        "Crafting fluid, high-performance interfaces with reactive state, accessible design, and modular component hierarchies.",
-    };
-  }
-  if (lower.includes("back") || lower.includes("api") || lower.includes("server")) {
-    return {
-      tag: "APIS & DISTRIBUTED SERVICES",
-      description:
-        "Engineering secure, scalable backend architectures, RESTful & WebSocket endpoints, and resilient business logic pipelines.",
-    };
-  }
-  if (lower.includes("data") || lower.includes("db") || lower.includes("sql")) {
-    return {
-      tag: "DATA MODELING & PERSISTENCE",
-      description:
-        "Designing structured data stores, performant indexing strategies, caching mechanisms, and robust transactional schemas.",
-    };
-  }
-  if (
-    lower.includes("devops") ||
-    lower.includes("cloud") ||
-    lower.includes("tool") ||
-    lower.includes("infra")
-  ) {
-    return {
-      tag: "INFRASTRUCTURE & DEPLOYMENT",
-      description:
-        "Automated CI/CD workflows, containerization, cloud infrastructure management, and modern developer tooling ecosystems.",
-    };
-  }
-  return {
-    tag: "TECHNICAL CAPABILITY",
-    description:
-      "Specialized frameworks, utilities, and engineering workflows built for production-grade reliability.",
-  };
-};
+import { getDomainMeta, groupSkillsByCategory } from "../../utils/skillHelpers";
 
 /**
  * FolderDeckCard: A single card in the interactive accordion deck.
@@ -218,23 +174,10 @@ const SkillCategoryCards = ({
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const groups = useMemo(() => {
-    const map = new Map();
-    skills.forEach((s) => {
-      const name = (s.category || "").trim() || "Other";
-      if (!map.has(name)) map.set(name, []);
-      map.get(name).push(s);
-    });
-    return [...map.entries()]
-      .map(([name, items]) => ({
-        name,
-        items: [...items].sort(
-          (a, b) => (Number(b.proficiency) || 0) - (Number(a.proficiency) || 0)
-        ),
-      }))
-      .sort((a, b) => b.items.length - a.items.length || a.name.localeCompare(b.name))
-      .slice(0, maxCategories);
-  }, [skills, maxCategories]);
+  const groups = useMemo(
+    () => groupSkillsByCategory(skills, maxCategories),
+    [skills, maxCategories]
+  );
 
   const total = groups.length;
   if (!total) return null;

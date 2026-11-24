@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Sparkles } from "lucide-react";
 
 import { ProjectCardBackground } from "./ProjectCardBackground";
 import { ProjectCardCurtain } from "./ProjectCardCurtain";
@@ -42,11 +41,18 @@ const ProjectCard = ({
             transition={{ delay: index * 0.05, duration: 0.4, ease: "easeOut" }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`group relative h-[420px] w-full overflow-hidden rounded-2xl border border-stone-800/80 bg-stone-900/40 backdrop-blur-md shadow-xl transition-all duration-300 hover:border-red-500/40 ${
+            className={`group relative h-[420px] w-full overflow-hidden rounded-2xl border border-stone-800/80 bg-stone-900/40 backdrop-blur-md shadow-xl transition-colors duration-300 hover:border-red-500/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 ${
                 showCurtain ? "cursor-default" : "cursor-pointer"
             }`}
             onClick={() => !showCurtain && openCurtain()}
             role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && !showCurtain) {
+                    e.preventDefault();
+                    openCurtain();
+                }
+            }}
             aria-expanded={showCurtain}
             aria-label={`${project.title} - click to view details`}
         >
@@ -67,8 +73,7 @@ const ProjectCard = ({
             />
 
             <div className="absolute top-4 right-4 z-20 select-none cursor-default">
-                <span className="inline-flex items-center gap-1.5 bg-[#0c0a09]/90 backdrop-blur-md border border-stone-800 rounded-full px-3 py-1 text-[11px] font-mono text-stone-400 group-hover:text-red-400 group-hover:border-red-500/30 transition-colors">
-                    <Sparkles className="w-3 h-3 text-red-400" />
+                <span className="inline-flex items-center bg-obsidian/90 backdrop-blur-md border border-stone-800 rounded-full px-2.5 py-0.5 text-[11px] font-mono font-medium text-stone-400 group-hover:text-red-400 group-hover:border-red-500/30 transition-colors">
                     {indexLabel}
                 </span>
             </div>

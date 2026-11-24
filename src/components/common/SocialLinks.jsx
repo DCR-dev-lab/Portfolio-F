@@ -1,4 +1,5 @@
-import { Github, Linkedin, Twitter, Instagram, ExternalLink } from "lucide-react";
+import { Github, Linkedin, Twitter, Instagram, ExternalLink, ArrowUpRight } from "lucide-react";
+import StarfieldButton from "./StarfieldButton";
 
 const PLATFORM_CONFIG = [
     { key: "github", label: "GitHub", icon: Github, defaultUrl: "https://github.com" },
@@ -22,11 +23,12 @@ const validateUrl = (url) => {
  * Reusable social links component supporting multiple visual variants:
  * - "circles": small circular icon buttons (used in Hero)
  * - "squares": small squircle icon buttons (used in Footer)
- * - "list": detailed list rows with platform name & external link icon (used in Contact)
+ * - "list": detailed list rows with platform name & external link icon
+ * - "rows": hairline editorial rows with no outer card containment (used in Contact)
  */
 const SocialLinks = ({
     socialLinks = {},
-    variant = "circles", // "circles" | "squares" | "list"
+    variant = "circles", // "circles" | "squares" | "list" | "rows"
     fallbackToDefaults = false,
     className = "",
 }) => {
@@ -41,6 +43,13 @@ const SocialLinks = ({
     }).filter((item) => item.isValid);
 
     if (activeLinks.length === 0) {
+        if (variant === "rows") {
+            return (
+                <p className="text-[var(--color-muted)] text-base py-2">
+                    No social links configured
+                </p>
+            );
+        }
         if (variant === "list") {
             return (
                 <p className="text-stone-500 text-xs font-mono py-2">
@@ -49,6 +58,27 @@ const SocialLinks = ({
             );
         }
         return null;
+    }
+
+    if (variant === "rows") {
+        return (
+            <div className={`contact-social-stack ${className}`}>
+                {activeLinks.map(({ key, label, url, icon: Icon }) => (
+                    <StarfieldButton
+                        key={key}
+                        label={label}
+                        link={url}
+                        newTab={true}
+                        icon={<Icon className="w-4 h-4 shrink-0 text-stone-200" aria-hidden="true" />}
+                        endIcon={<ArrowUpRight className="w-3.5 h-3.5 shrink-0 text-stone-200 opacity-90" aria-hidden="true" />}
+                        padding="11px 18px"
+                        rounded={100}
+                        ariaLabel={`Visit ${label} profile`}
+                        style={{ width: "100%" }}
+                    />
+                ))}
+            </div>
+        );
     }
 
     if (variant === "list") {

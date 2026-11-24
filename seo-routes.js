@@ -18,7 +18,6 @@ export const ROUTE_SEO = {
     ],
     links: [
       { href: "/projects", text: "Featured Projects" },
-      { href: "/skills", text: "Technical Skills" },
       { href: "/contact", text: "Contact Channels" },
       { href: "/privacy", text: "Privacy Policy" },
       { href: "/terms", text: "Terms of Service" }
@@ -40,28 +39,7 @@ export const ROUTE_SEO = {
     ],
     links: [
       { href: "/", text: "Return Home" },
-      { href: "/skills", text: "Skills Matrix" },
       { href: "/contact", text: "Inquire About Projects" }
-    ]
-  },
-  "/skills": {
-    path: "/skills",
-    title: "Technical Skills & Stack | Denny Charles Raj",
-    description: "Explore Denny Charles Raj's technical proficiencies across React 19, Node.js, Express, MongoDB, Tailwind CSS, and full-stack architecture.",
-    h1: "Skills & Technical Capabilities",
-    h2: "Frontend Engineering, Full Stack Systems & DevOps Methodologies",
-    paragraphs: [
-      "Welcome to my technical skills page. Over the years, I have worked with a wide range of tools for web development. Here is a clear breakdown of the languages, frameworks, and tools I use every day.",
-      "On the frontend, my core focus is React and modern JavaScript. I build fast, single-page applications with Vite. For styling, I rely on Tailwind CSS to create clean, responsive designs that load without delay.",
-      "On the backend, I build servers with Node.js and Express. I design clear REST APIs that handle data quickly and securely. For data storage, I use MongoDB and Mongoose to create flexible schemas.",
-      "Security and code health are essential parts of my work. I use JSON Web Tokens to protect routes and bcrypt to hash passwords. I also use Git and GitHub to manage version control and keep my code safe.",
-      "I also work with modern developer tools like Postman for API testing and ESLint for code consistency. Performance audits and responsive testing are part of my daily workflow.",
-      "I enjoy learning new techniques and adopting best practices. My goal is always to deliver software that is both fast and enjoyable to use. Take a look at the skill categories below to see my experience levels."
-    ],
-    links: [
-      { href: "/", text: "Return Home" },
-      { href: "/projects", text: "View Applied Projects" },
-      { href: "/contact", text: "Discuss Technical Needs" }
     ]
   },
   "/contact": {
@@ -75,13 +53,12 @@ export const ROUTE_SEO = {
       "I work with clients and teams of all sizes. I can help you build a new web application from scratch, redesign an older website, or improve page speed. I also offer technical consulting for frontend architecture.",
       "When you work with me, you can expect clear communication and dependable delivery. I keep you updated at each stage of the project and make sure the final result meets your goals.",
       "I am comfortable working in remote environments and collaborating across different time zones. I value feedback and work closely with you to solve technical challenges quickly.",
-      "You can reach out in several easy ways. Send a message using the form on this page, or write to me directly at dennycharls77@gmail.com. You can also find me on GitHub and LinkedIn.",
+      "You can reach out in several easy ways. Copy my email address in one click, write directly to dennycharls77@gmail.com, or connect via GitHub and LinkedIn.",
       "I check my messages every day and reply as soon as possible. I look forward to discussing ideas and finding the right software solution for you. Do not hesitate to say hello and start a conversation."
     ],
     links: [
       { href: "/", text: "Return Home" },
-      { href: "/projects", text: "Review Portfolio" },
-      { href: "/skills", text: "Check Skills" }
+      { href: "/projects", text: "Review Portfolio" }
     ]
   },
   "/privacy": {
@@ -274,7 +251,7 @@ export function viteSeoPlugin() {
           fs.writeFileSync(path.join(routeDir, 'index.html'), prerendered, 'utf-8');
         }
       }
-      console.log('✓ Successfully pre-rendered static SEO HTML for all 6 public routes in dist/');
+      console.log(`✓ Successfully pre-rendered static SEO HTML for all ${Object.keys(ROUTE_SEO).length} public routes in dist/`);
     }
   };
 }

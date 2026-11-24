@@ -323,8 +323,8 @@ export const createSim = ({ P, W, H, reduced = false, rand = Math.random }) => {
       const r = hd.rect;
       let want = s.want;
       if (!want) {
-        if (r.top < (G.startAt ?? 0.98) * h && r.bottom > 0.28 * h) want = true;
-      } else if (r.top > (G.releaseAt ?? 1.06) * h || r.bottom < 0.18 * h) {
+        if (r.top < (G.startAt ?? 0.98) * h && r.bottom > 0.02 * h) want = true;
+      } else if (r.top > (G.releaseAt ?? 1.06) * h || r.bottom < -0.05 * h) {
         want = false;
       }
       if (want !== s.want) setWant(s, want);

@@ -3,6 +3,14 @@
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --color-obsidian: #0c0a09;
+  --color-cream: #faf8f5;
+  --color-crimson: #dc2626;
+  --color-crimson-glow: rgba(220, 38, 38, 0.7);
+  --color-scrollbar-thumb: #292524;
+  --color-scrollbar-thumb-hover: #44403c;
+  --color-dot-grid: rgba(250, 248, 245, 0.06);
+  --color-crimson-bloom: rgba(220, 38, 38, 0.08);
 }
 
 @layer base {
@@ -11,60 +19,66 @@
   }
 
   html {
-    scroll-behavior: smooth;
-    background-color: #0c0a09;
+    background-color: var(--color-obsidian);
     font-family: var(--font-sans);
+    overflow-x: clip;
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-obsidian);
+    scrollbar-width: thin;
   }
 
   body {
-    background-color: #0c0a09;
-    color: #faf8f5;
+    background-color: var(--color-obsidian);
+    color: var(--color-cream);
     font-family: var(--font-sans);
     letter-spacing: -0.015em;
+    caret-color: var(--color-crimson);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.025em;
+    text-wrap: balance;
   }
 
   ::selection {
-    background-color: #dc2626;
-    color: #ffffff;
+    background-color: var(--color-crimson);
+    color: var(--color-cream);
   }
 }
 
-/* Custom Minimal Warm Obsidian Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* Custom Minimal Warm Obsidian Scrollbar (WebKit fallback where scrollbar-color is unsupported) */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar-track {
-  background: #0c0a09;
-}
+  ::-webkit-scrollbar-track {
+    background: var(--color-obsidian);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #292524;
-  border-radius: 9999px;
-  border: 2px solid #0c0a09;
-}
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+    border-radius: 9999px;
+    border: 2px solid var(--color-obsidian);
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #44403c;
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-thumb-hover);
+  }
 }
 
 /* Subtle Warm Dot Grid Pattern */
 .bg-dot-grid {
-  background-image: radial-gradient(rgba(250, 248, 245, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(var(--color-dot-grid) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 /* Subtle Crimson Ambient Glow */
 .bg-radial-top {
-  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(220, 38, 38, 0.08), transparent 70%);
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, var(--color-crimson-bloom), transparent 70%);
 }
 
 /* Seamless Infinite Tech Drift Marquee */

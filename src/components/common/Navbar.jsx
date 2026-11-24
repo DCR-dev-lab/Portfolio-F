@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Briefcase, Mail, Code2, Terminal } from "lucide-react";
+import { Menu, X, Home, Briefcase, Mail, Terminal } from "lucide-react";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -71,10 +71,19 @@ const Navbar = () => {
         };
     }, [isIntroHeld]);
 
+    // Close mobile menu on Escape key
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") setIsOpen(false);
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen]);
+
     const navLinks = [
         { path: "/", label: "Home", icon: Home },
         { path: "/projects", label: "Projects", icon: Briefcase },
-        { path: "/skills", label: "Skills", icon: Code2 },
         { path: "/contact", label: "Contact", icon: Mail }
     ];
 
@@ -100,7 +109,10 @@ const Navbar = () => {
                 <div className="flex justify-between items-center">
 
                     {/* Logo with Rich Red Dot & Terminal Glyph */}
-                    <Link to="/" className="group flex items-center gap-3">
+                    <Link
+                        to="/"
+                        className="group flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/70"
+                    >
                         <div className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-stone-900 border border-stone-800 text-red-500 transition-all duration-200 group-hover:border-red-500/50 group-hover:bg-red-500/10 shadow-sm">
                             <Terminal className="w-4 h-4 text-red-500 group-hover:text-red-400 transition-colors" />
                         </div>
@@ -125,7 +137,7 @@ const Navbar = () => {
                                     to={link.path}
                                     className={`relative px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-2 ${
                                         isActive
-                                            ? "bg-stone-800/90 text-[#faf8f5] font-semibold border border-stone-700/60 shadow-sm"
+                                            ? "bg-red-500/[0.08] text-red-200 font-semibold border border-red-500/30 shadow-sm shadow-red-950/30"
                                             : "text-stone-400 hover:text-[#faf8f5] hover:bg-stone-800/40"
                                     }`}
                                 >
@@ -152,7 +164,7 @@ const Navbar = () => {
 
                 {/* Mobile Nav */}
                 {isOpen && (
-                    <div className="md:hidden mt-3 pb-3 space-y-1.5 border-t border-stone-800/80 pt-3 animate-fade-in">
+                    <div className="md:hidden mt-3 pb-3 space-y-1.5 border-t border-stone-800/80 pt-3 transition-opacity duration-200">
                         {navLinks.map((link) => {
                             const isActive = activePage === link.path;
 
@@ -163,7 +175,7 @@ const Navbar = () => {
                                     onClick={() => setIsOpen(false)}
                                     className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                                         isActive
-                                            ? "bg-stone-800/90 text-[#faf8f5] font-semibold border border-stone-700/60"
+                                            ? "bg-red-500/[0.08] text-red-200 font-semibold border border-red-500/30"
                                             : "text-stone-300 hover:bg-stone-900 hover:text-white"
                                     }`}
                                 >
@@ -175,22 +187,6 @@ const Navbar = () => {
                     </div>
                 )}
             </div>
-
-            <style>{`
-                @keyframes fade-in {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-8px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-                .animate-fade-in {
-                    animation: fade-in 0.2s ease-out;
-                }
-            `}</style>
         </nav>
     );
 };

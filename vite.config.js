@@ -6,6 +6,34 @@ import { viteSeoPlugin } from "./seo-routes.js";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), viteSeoPlugin()],
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("three")) {
+              return "vendor-three";
+            }
+            if (id.includes("framer-motion") || id.includes("motion")) {
+              return "vendor-motion";
+            }
+            if (
+              id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("react-router-dom") ||
+              id.includes("react-router")
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("lucide-react") || id.includes("@fortawesome")) {
+              return "vendor-icons";
+            }
+          }
+        },
+      },
+    },
+  },
   server: {
     host: true, // Listens on all local IPs (127.0.0.1 and ::1) to prevent Screaming Frog connection refused errors
     port: 5173,

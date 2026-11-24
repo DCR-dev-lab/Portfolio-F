@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ExternalLink, Github, X } from "lucide-react";
+import { X } from "lucide-react";
 import portfolioPlaceholder from "../../assets/images/portfolio-placeholder.svg";
 import ExpandedProjects from "./ExpandedProjects";
+import SpotlightProjectContent from "./SpotlightProjectContent";
 import { clamp, computeLayout, GAP, magneticTargets, smooth } from "./magneticProjectUtils";
 
 /**
@@ -15,8 +16,6 @@ const CH = 340; // closed height
 const HH = 420; // height at full hover
 const OH = 480; // open height
 const NARROW = 720; // below this width: accordion instead
-
-const hasUrl = (u) => Boolean(u) && u !== "#";
 
 const MagneticProjects = ({ projects = [] }) => {
     const n = projects.length;
@@ -32,6 +31,7 @@ const MagneticProjects = ({ projects = [] }) => {
     const cur = useRef(projects.map(() => 0));
     const loop = useRef(0);
     const closeTimer = useRef(0);
+    const cardRectMap = useRef(new WeakMap());
 
     const narrow = W > 0 && W < NARROW;
     const L = computeLayout(W || 1000, Math.max(n, 1));
@@ -41,7 +41,8 @@ const MagneticProjects = ({ projects = [] }) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
         rectLeftRef.current = rect.left;
-        setW(Math.round(rect.width));
+        const nextW = Math.round(rect.width);
+        setW((prev) => (prev === nextW ? prev : nextW));
     }, []);
 
     // measure the container
@@ -52,11 +53,9 @@ const MagneticProjects = ({ projects = [] }) => {
         ro.observe(el);
         updateBounds();
         window.addEventListener("resize", updateBounds, { passive: true });
-        window.addEventListener("scroll", updateBounds, { passive: true });
         return () => {
             ro.disconnect();
             window.removeEventListener("resize", updateBounds);
-            window.removeEventListener("scroll", updateBounds);
         };
     }, [updateBounds]);
 
@@ -76,7 +75,7 @@ const MagneticProjects = ({ projects = [] }) => {
         []
     );
 
-    // ease the slice sizes toward their targets (only runs while something is moving)
+    // ease the slice sizes toward their targets with responsive spring tracking
     const run = () => {
         if (loop.current) return;
         const step = () => {
@@ -86,7 +85,7 @@ const MagneticProjects = ({ projects = [] }) => {
             for (let i = 0; i < c.length; i++) {
                 const d = (t[i] ?? 0) - c[i];
                 if (Math.abs(d) > 0.001) {
-                    c[i] += d * 0.22;
+                    c[i] += d * 0.32;
                     moving = true;
                 } else c[i] = t[i] ?? 0;
             }
@@ -103,9 +102,18 @@ const MagneticProjects = ({ projects = [] }) => {
         run();
     };
 
+    const onCardEnter = (e) => {
+        if (e.pointerType && e.pointerType !== "mouse") return;
+        cardRectMap.current.set(e.currentTarget, e.currentTarget.getBoundingClientRect());
+    };
+
     const onCardMove = (e) => {
         if (e.pointerType && e.pointerType !== "mouse") return;
-        const rect = e.currentTarget.getBoundingClientRect();
+        let rect = cardRectMap.current.get(e.currentTarget);
+        if (!rect) {
+            rect = e.currentTarget.getBoundingClientRect();
+            cardRectMap.current.set(e.currentTarget, rect);
+        }
         const x = Math.round(e.clientX - rect.left);
         const y = Math.round(e.clientY - rect.top);
         e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
@@ -113,6 +121,7 @@ const MagneticProjects = ({ projects = [] }) => {
     };
 
     const onCardLeave = (e) => {
+        cardRectMap.current.delete(e.currentTarget);
         e.currentTarget.style.setProperty("--mouse-x", "50%");
         e.currentTarget.style.setProperty("--mouse-y", "100%");
     };
@@ -129,21 +138,22 @@ const MagneticProjects = ({ projects = [] }) => {
         run();
     };
 
+    const closeCard = useCallback(() => {
+        target.current = Array.from({ length: n }, () => 0);
+        cur.current = Array.from({ length: n }, () => 0);
+        setFactors(Array.from({ length: n }, () => 0));
+        setClosing(true);
+        clearTimeout(closeTimer.current);
+        closeTimer.current = setTimeout(() => setClosing(false), 520);
+        setOpen(null);
+    }, [n]);
+
     // Escape closes; clicking empty space (not a card) closes
     useEffect(() => {
         if (open === null) return;
-        const close = () => {
-            target.current = Array.from({ length: n }, () => 0);
-            cur.current = Array.from({ length: n }, () => 0);
-            setFactors(Array.from({ length: n }, () => 0));
-            setClosing(true);
-            clearTimeout(closeTimer.current);
-            closeTimer.current = setTimeout(() => setClosing(false), 520);
-            setOpen(null);
-        };
-        const onKey = (e) => e.key === "Escape" && close();
+        const onKey = (e) => e.key === "Escape" && closeCard();
         const onDown = (e) => {
-            if (!e.target.closest || !e.target.closest("[data-magnetic-card]")) close();
+            if (!e.target.closest || !e.target.closest("[data-magnetic-card]")) closeCard();
         };
         window.addEventListener("keydown", onKey);
         document.addEventListener("pointerdown", onDown);
@@ -151,7 +161,7 @@ const MagneticProjects = ({ projects = [] }) => {
             window.removeEventListener("keydown", onKey);
             document.removeEventListener("pointerdown", onDown);
         };
-    }, [open, n]);
+    }, [open, closeCard]);
 
     if (!n) return null;
 
@@ -164,7 +174,7 @@ const MagneticProjects = ({ projects = [] }) => {
     const animating = open !== null || closing;
     const ease = "cubic-bezier(0.22, 1, 0.36, 1)";
     const trans = animating
-        ? `width .5s ${ease}, height .5s ${ease}, filter .5s ${ease}, opacity .5s ${ease}`
+        ? `width .45s ${ease}, height .45s ${ease}, opacity .35s ease`
         : "none";
 
     return (
@@ -173,7 +183,12 @@ const MagneticProjects = ({ projects = [] }) => {
                 <ExpandedProjects projects={projects} />
             ) : (
                 <div
-                    onPointerEnter={updateBounds}
+                    onPointerEnter={(e) => {
+                        if (!rectLeftRef.current && wrapRef.current) {
+                            rectLeftRef.current = wrapRef.current.getBoundingClientRect().left;
+                        }
+                        onMove(e);
+                    }}
                     onPointerMove={onMove}
                     onPointerLeave={relax}
                     data-magnetic-area
@@ -193,6 +208,7 @@ const MagneticProjects = ({ projects = [] }) => {
                                 ref={isOpen ? openRef : null}
                                 data-magnetic-card
                                 data-magnetic-open={isOpen}
+                                onPointerEnter={onCardEnter}
                                 onPointerMove={onCardMove}
                                 onPointerLeave={onCardLeave}
                                 className="relative flex-none overflow-hidden rounded-2xl border border-stone-800/80 bg-stone-950"
@@ -200,30 +216,28 @@ const MagneticProjects = ({ projects = [] }) => {
                                     width: w,
                                     height: h,
                                     transition: trans,
-                                    willChange: "width, height",
                                     zIndex: isOpen ? 3 : 2,
-                                    filter: dimmed ? "blur(2px)" : "none",
-                                    opacity: dimmed ? 0.6 : 1,
+                                    opacity: dimmed ? 0.35 : 1,
                                     boxShadow: isOpen
-                                        ? "0 20px 50px -10px rgba(0,0,0,0.8), 0 0 35px rgba(220,38,38,0.25)"
+                                        ? "0 20px 45px -10px rgba(0,0,0,0.85), 0 0 25px rgba(220,38,38,0.2)"
                                         : f > 0.05
-                                          ? `0 12px 30px -5px rgba(0,0,0,0.6), 0 0 24px rgba(220,38,38,${f * 0.3})`
+                                          ? `0 10px 24px -5px rgba(0,0,0,0.6), 0 0 16px rgba(220,38,38,${f * 0.25})`
                                           : undefined,
                                 }}
                             >
                                 {imageSrc ? (
                                     <img
                                         src={imageSrc}
-                                        alt=""
+                                        alt={isOpen ? p.title : ""}
                                         decoding="async"
                                         draggable={false}
-                                        className="absolute inset-0 h-full w-full object-cover will-change-[transform,filter]"
+                                        className="absolute inset-0 h-full w-full object-cover will-change-transform"
                                         style={{
                                             filter: isOpen
                                                 ? "grayscale(0) brightness(0.7)"
-                                                : `grayscale(${1 - f}) brightness(${0.4 + 0.4 * f})`,
+                                                : `grayscale(${1 - f}) brightness(${0.48 + 0.32 * f})`,
                                             transform: isOpen ? "scale(1) translateZ(0)" : `scale(${1.1 - f * 0.05}) translateZ(0)`,
-                                            transition: animating ? "filter .5s, transform .5s" : "none",
+                                            transition: animating ? "transform .45s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
                                         }}
                                     />
                                 ) : (
@@ -303,60 +317,19 @@ const MagneticProjects = ({ projects = [] }) => {
                                     }`}
                                     aria-hidden={!isOpen}
                                 >
-                                    {p.type && (
-                                        <div className="mb-3 flex items-center gap-2">
-                                            <span className="h-px w-6 bg-red-500" />
-                                            <span className="font-mono text-[10px] uppercase tracking-widest text-red-400">{p.type}</span>
-                                        </div>
-                                    )}
-                                    <h3 className="text-2xl font-bold leading-tight text-[#faf8f5]">{p.title}</h3>
-                                    {p.shortDescription && (
-                                        <p className="mt-2 max-w-lg text-sm leading-relaxed text-stone-300">{p.shortDescription}</p>
-                                    )}
-                                    {p.technologies?.length > 0 && (
-                                        <div className="mt-4 flex flex-wrap gap-1.5">
-                                            {p.technologies.slice(0, 6).map((t) => (
-                                                <span key={t} className="rounded-md border border-stone-700/70 bg-stone-900/80 px-2.5 py-0.5 font-mono text-[11px] text-stone-300">
-                                                    {t}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {(hasUrl(p.projectUrl) || hasUrl(p.githubUrl)) && (
-                                        <div className="mt-5 flex flex-wrap gap-2.5">
-                                            {hasUrl(p.projectUrl) && (
-                                                <a
-                                                    href={p.projectUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    tabIndex={isOpen ? 0 : -1}
-                                                    className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-sm shadow-red-900/40 transition hover:bg-red-500 active:scale-95"
-                                                >
-                                                    <ExternalLink className="h-3.5 w-3.5" />
-                                                    Live Demo
-                                                </a>
-                                            )}
-                                            {hasUrl(p.githubUrl) && (
-                                                <a
-                                                    href={p.githubUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    tabIndex={isOpen ? 0 : -1}
-                                                    className="inline-flex items-center gap-1.5 rounded-full border border-stone-700 bg-stone-900/70 px-5 py-2 text-xs font-medium text-stone-200 transition hover:border-red-500/50 hover:text-white"
-                                                >
-                                                    <Github className="h-3.5 w-3.5" />
-                                                    Source
-                                                </a>
-                                            )}
-                                        </div>
-                                    )}
+                                    <SpotlightProjectContent
+                                        project={p}
+                                        isOpen={isOpen}
+                                        maxTech={6}
+                                        titleClassName="text-2xl font-bold leading-tight text-[#faf8f5]"
+                                    />
                                 </div>
 
                                 {isOpen && (
                                     <button
                                         type="button"
                                         aria-label={`Close ${p.title}`}
-                                        onClick={close}
+                                        onClick={closeCard}
                                         className="absolute right-3.5 top-3.5 z-30 flex h-8 w-8 items-center justify-center rounded-full border border-stone-700 bg-stone-900/80 text-stone-300 transition hover:border-red-500/50 hover:text-white"
                                     >
                                         <X className="h-4 w-4" />

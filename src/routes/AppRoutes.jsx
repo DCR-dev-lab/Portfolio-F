@@ -10,7 +10,6 @@ import AdminProfile from "../pages/admin/AdminProfile";
 
 import Home from "../pages/public/Home";
 import Projects from "../pages/public/Projects";
-import Skills from "../pages/public/Skills";
 import Contact from "../pages/public/Contact";
 import PrivacyPolicy from "../pages/public/PrivacyPolicy";
 import TermsOfService from "../pages/public/TermsOfService";
@@ -23,7 +22,6 @@ const AppRoutes = () => {
             <Route element={<PublicLayout />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/projects" element={<Projects />} />
-                <Route path="/skills" element={<Skills />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />

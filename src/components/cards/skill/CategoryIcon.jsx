@@ -95,34 +95,32 @@ const getIcon = (iconKeyword) => {
     return null;
 };
 
+const CATEGORY_LUCIDE_RULES = [
+    { match: (c, norm) => c === "Frontend" || norm.includes("front"), icon: LucideIcons.Code2 },
+    { match: (c, norm) => c === "Backend" || norm.includes("back"), icon: LucideIcons.Server },
+    { match: (c, norm) => c === "Database" || norm.includes("data"), icon: LucideIcons.Database },
+    { match: (c, norm) => c === "DevOps" || norm.includes("cloud") || norm.includes("devops"), icon: LucideIcons.Layers },
+    { match: (c) => c === "Language", icon: LucideIcons.Code },
+    { match: (c) => c === "Testing", icon: LucideIcons.Bug },
+    { match: (c, norm) => c === "UI/UX" || norm.includes("design") || norm.includes("ui"), icon: LucideIcons.Palette },
+    { match: (c) => c === "Performance", icon: LucideIcons.Gauge },
+    { match: (c, norm) => c === "Deployment" || norm.includes("saas"), icon: LucideIcons.Rocket },
+    { match: (c) => c === "Authentication", icon: LucideIcons.Key },
+    { match: (c) => c === "Cookie", icon: LucideIcons.Cookie },
+    { match: (_, norm) => norm.includes("ai") || norm.includes("ml"), icon: LucideIcons.Cpu },
+    { match: (_, norm) => norm.includes("mobile") || norm.includes("app"), icon: LucideIcons.Smartphone },
+    { match: (_, norm) => norm.includes("productivity"), icon: LucideIcons.Zap },
+];
+
 export const CategoryIcon = ({ category, className, iconKeyword, skillName }) => {
     const customIcon = getIcon(iconKeyword || skillName);
-    // console.log("customIcon", customIcon, "iconKeyword", iconKeyword, "skillName", skillName);
     if (customIcon?.type === "fontawesome") {
         return <FontAwesomeIcon icon={customIcon.icon} className={className} aria-hidden="true" />;
     }
 
-    // const fallbackInitial = skillName?.trim()?.charAt(0)?.toUpperCase();
-    // if (fallbackInitial) {
-    //     return <span className={`flex items-center justify-center font-semibold ${className}`}>{fallbackInitial}</span>;
-    // }
-
     const normCat = category?.toLowerCase() || "";
+    const matchedRule = CATEGORY_LUCIDE_RULES.find((r) => r.match(category, normCat));
+    const IconComponent = matchedRule?.icon || LucideIcons.Award;
 
-    if (category === "Frontend" || normCat.includes("front")) return <LucideIcons.Code2 className={className} aria-hidden="true" />;
-    if (category === "Backend" || normCat.includes("back")) return <LucideIcons.Server className={className} aria-hidden="true" />;
-    if (category === "Database" || normCat.includes("data")) return <LucideIcons.Database className={className} aria-hidden="true" />;
-    if (category === "DevOps" || normCat.includes("cloud") || normCat.includes("devops")) return <LucideIcons.Layers className={className} aria-hidden="true" />;
-    if (category === "Language") return <LucideIcons.Code className={className} aria-hidden="true" />;
-    if (category === "Testing") return <LucideIcons.Bug className={className} aria-hidden="true" />;
-    if (category === "UI/UX" || normCat.includes("design") || normCat.includes("ui")) return <LucideIcons.Palette className={className} aria-hidden="true" />;
-    if (category === "Performance") return <LucideIcons.Gauge className={className} aria-hidden="true" />;
-    if (category === "Deployment" || normCat.includes("saas")) return <LucideIcons.Rocket className={className} aria-hidden="true" />;
-    if (category === "Authentication") return <LucideIcons.Key className={className} aria-hidden="true" />;
-    if (category === "Cookie") return <LucideIcons.Cookie className={className} aria-hidden="true" />;
-    if (normCat.includes("ai") || normCat.includes("ml")) return <LucideIcons.Cpu className={className} aria-hidden="true" />;
-    if (normCat.includes("mobile") || normCat.includes("app")) return <LucideIcons.Smartphone className={className} aria-hidden="true" />;
-    if (normCat.includes("productivity")) return <LucideIcons.Zap className={className} aria-hidden="true" />;
-
-    return <LucideIcons.Award className={className} aria-hidden="true" />;
+    return <IconComponent className={className} aria-hidden="true" />;
 };

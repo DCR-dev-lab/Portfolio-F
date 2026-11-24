@@ -1,5 +1,4 @@
-import { ArrowRight, Code2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Code2 } from "lucide-react";
 import useScrollReveal from "../../hooks/useScrollReveal";
 import EmptyState from "../ui/EmptyState";
 import ParticleHeading from "../particles/ParticleHeading";
@@ -17,6 +16,7 @@ const SkillsPreview = ({ skills, perCategory = 8 }) => {
   return (
     <section
       ref={sectionRef}
+      aria-labelledby="skills-heading"
       className="relative py-24 md:py-32 px-4 sm:px-6 bg-transparent border-t border-stone-800/40 overflow-x-clip"
     >
       <div className="relative max-w-6xl mx-auto">
@@ -33,6 +33,7 @@ const SkillsPreview = ({ skills, perCategory = 8 }) => {
           </div>
 
           <ParticleHeading
+            id="skills-heading"
             text="Skills"
             className="w-[min(92vw,480px)] h-[80px] sm:h-[100px] md:h-[115px] mx-auto"
           />
@@ -44,25 +45,13 @@ const SkillsPreview = ({ skills, perCategory = 8 }) => {
         </div>
 
         {hasSkills ? (
-          <>
-            {/* Stacking deck tailored to max-w-4xl so background particle atmosphere breathes */}
-            <div className="max-w-4xl mx-auto">
-              <SkillStack
-                skills={skills}
-                perCategory={perCategory}
-              />
-            </div>
-
-            <div className="text-center mt-12 md:mt-16">
-              <Link
-                to="/skills"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-stone-900/70 border border-stone-800 text-stone-200 font-medium text-sm hover:border-red-500/40 hover:text-red-400 transition-all hover:scale-105 active:scale-95 group"
-              >
-                <span>Explore Full Toolkit</span>
-                <ArrowRight className="w-4 h-4 text-red-400 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </>
+          /* Stacking deck tailored to max-w-4xl so background particle atmosphere breathes */
+          <div className="max-w-4xl mx-auto">
+            <SkillStack
+              skills={skills}
+              perCategory={perCategory}
+            />
+          </div>
         ) : (
           <EmptyState title="No skills to display" className="py-12" />
         )}

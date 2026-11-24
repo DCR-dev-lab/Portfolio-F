@@ -2,7 +2,6 @@
 User-agent: *
 Allow: /
 Allow: /projects
-Allow: /skills
 Allow: /contact
 Allow: /privacy
 Allow: /terms

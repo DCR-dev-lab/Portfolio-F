@@ -1,5 +1,6 @@
 import { ArrowUpRight, MapPin } from "lucide-react";
 import useScrollReveal from "../../hooks/useScrollReveal";
+import { useReducedMotion } from "motion/react";
 
 /**
  * AboutMe
@@ -9,6 +10,7 @@ import useScrollReveal from "../../hooks/useScrollReveal";
  */
 const AboutMe = ({ about, profile }) => {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
+  const reduce = useReducedMotion();
 
   const location = profile?.location || "Tamil Nadu, India";
 
@@ -22,15 +24,18 @@ const AboutMe = ({ about, profile }) => {
   const lines = splitIntoLines(displayStatement);
 
   // Two-line bio beneath the statement — compact, metadata-like
-  const bioLine1 = profile?.shortIntro
-    ? profile.shortIntro.split(".")[0]?.trim()
-    : "Developer with a background in mathematics";
-  const bioLine2 = "Focused on performance, clean architecture & DX.";
+  const introParts = profile?.shortIntro
+    ? profile.shortIntro.split(".").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const bioLine1 = introParts[0] || "Developer with a background in mathematics";
+  const bioLine2 = introParts[1] || "Focused on performance, clean architecture & DX.";
 
   const delay = (ms) =>
-    isVisible
-      ? { opacity: 1, transform: "translateY(0)", transition: `opacity 0.8s ease ${ms}ms, transform 0.8s ease ${ms}ms` }
-      : { opacity: 0, transform: "translateY(28px)" };
+    reduce
+      ? {}
+      : isVisible
+        ? { opacity: 1, transform: "translateY(0)", transition: `opacity 0.8s ease ${ms}ms, transform 0.8s ease ${ms}ms` }
+        : { opacity: 0, transform: "translateY(28px)" };
 
   return (
     <section
@@ -39,6 +44,11 @@ const AboutMe = ({ about, profile }) => {
       aria-labelledby="about-heading"
       className="relative min-h-[100dvh] flex flex-col justify-center bg-transparent border-t border-stone-800/40 px-6 sm:px-10 lg:px-16 py-20 md:py-28 overflow-hidden"
     >
+      {/* Subtle top hairline bridge for seamless transition from Hero */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-stone-700/60 to-transparent"
+      />
       <div className="relative max-w-5xl mx-auto w-full">
 
         {/* Top metadata line */}
@@ -57,6 +67,8 @@ const AboutMe = ({ about, profile }) => {
 
         {/* Large display statement — the centrepiece */}
         <div className="mb-16 md:mb-24">
+          {/* sr-only heading for screen readers and section labelling */}
+          <h2 id="about-heading" className="sr-only">About</h2>
           {lines.map((line, i) => {
             const { text, accent } = parseAccent(line);
             return (
@@ -66,7 +78,6 @@ const AboutMe = ({ about, profile }) => {
                 className="overflow-hidden"
               >
                 <p
-                  id={i === 0 ? "about-heading" : undefined}
                   className="text-[clamp(2rem,5.5vw,4.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#faf8f5] motion-reduce:transition-none"
                 >
                   {text}
