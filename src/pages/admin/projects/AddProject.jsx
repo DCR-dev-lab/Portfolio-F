@@ -1,7 +1,15 @@
+import { useNavigate } from "react-router-dom";
 import ProjectForm from "./ProjectForm";
 
-const AddProject = ({ onSuccess, onCancel }) => {
-    return <ProjectForm onSuccess={onSuccess} onCancel={onCancel} />;
+const AddProject = () => {
+    const navigate = useNavigate();
+
+    return (
+        <ProjectForm
+            onSuccess={() => navigate("/mod/projects")}
+            onCancel={() => navigate("/mod/projects")}
+        />
+    );
 };
 
 export default AddProject;

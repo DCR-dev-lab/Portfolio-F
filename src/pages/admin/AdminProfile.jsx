@@ -1,7 +1,66 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
-import Input from "../../components/ui/Input";
+import { toast } from "sonner";
+import MDEditor from "@uiw/react-md-editor";
+import ImageUploadField from "../../components/ui/ImageUploadField";
+import {
+    UserCircle,
+    Save,
+    CheckCircle2,
+    AlertCircle,
+    Globe,
+    Github,
+    Linkedin,
+    Twitter,
+    Instagram,
+    Phone,
+    MapPin,
+    Mail,
+    FileText,
+    Image,
+    Link as LinkIcon,
+    Hash,
+} from "lucide-react";
 
+/* ── Reusable dark-themed field components ───────────────────── */
+const FieldLabel = ({ children }) => (
+    <label className="mb-1.5 block text-xs font-medium text-stone-400">
+        {children}
+    </label>
+);
+
+const DarkInput = ({ icon: Icon, ...props }) => (
+    <div className="relative">
+        {Icon && (
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-500">
+                <Icon size={14} />
+            </span>
+        )}
+        <input
+            {...props}
+            className={`w-full rounded-lg border border-stone-700/70 bg-stone-900 py-2.5 text-sm text-cream placeholder-stone-600 outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
+                Icon ? "pl-9 pr-3.5" : "px-3.5"
+            } ${props.className || ""}`}
+        />
+    </div>
+);
+
+const DarkTextarea = ({ rows = 4, ...props }) => (
+    <textarea
+        rows={rows}
+        {...props}
+        className={`w-full resize-y rounded-lg border border-stone-700/70 bg-stone-900 px-3.5 py-2.5 text-sm text-cream placeholder-stone-600 outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${props.className || ""}`}
+    />
+);
+
+const Section = ({ title, children }) => (
+    <div className="rounded-xl border border-stone-800/70 bg-stone-900/50 p-5">
+        <h3 className="mb-4 text-sm font-semibold text-stone-300">{title}</h3>
+        <div className="space-y-4">{children}</div>
+    </div>
+);
+
+/* ───────────────────────────────────────────────────────────── */
 const AdminProfile = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -23,6 +82,8 @@ const AdminProfile = () => {
         instagram: "",
         resumeUrl: "",
         profilePictureUrl: "",
+        homeProjectsCount: "",
+        homeSkillsPerCategory: "",
     });
 
     // fetch profile
@@ -31,7 +92,7 @@ const AdminProfile = () => {
             try {
                 const res = await api.get("/admin/profile");
                 if (res.data) {
-                    // Using .trim() ensures that strings containing only spaces 
+                    // Using .trim() ensures that strings containing only spaces
                     // turn back into truly empty strings (""), exposing your placeholders.
                     setForm({
                         fullName: (res.data.fullName || "").trim(),
@@ -47,6 +108,8 @@ const AdminProfile = () => {
                         instagram: (res.data.socialLinks?.instagram || "").trim(),
                         resumeUrl: (res.data.resumeUrl || "").trim(),
                         profilePictureUrl: (res.data.profilePictureUrl || "").trim(),
+                        homeProjectsCount: res.data.homeProjectsCount ?? 7,
+                        homeSkillsPerCategory: res.data.homeSkillsPerCategory ?? 8,
                     });
                 }
             } catch (err) {
@@ -80,6 +143,8 @@ const AdminProfile = () => {
                 location: form.location,
                 resumeUrl: form.resumeUrl,
                 profilePictureUrl: form.profilePictureUrl,
+                homeProjectsCount: Number(form.homeProjectsCount),
+                homeSkillsPerCategory: Number(form.homeSkillsPerCategory),
                 socialLinks: {
                     github: form.github,
                     linkedin: form.linkedin,
@@ -88,155 +153,171 @@ const AdminProfile = () => {
                 },
             });
 
+            toast.success("Profile updated successfully.");
             setSaveMessage("Profile updated successfully.");
+            setTimeout(() => setSaveMessage(""), 4000);
         } catch (err) {
-            setSaveError(err.response?.data?.message || "Failed to update profile.");
+            const msg = err.response?.data?.message || "Failed to update profile.";
+            toast.error(msg);
+            setSaveError(msg);
         } finally {
             setDisabled(false);
         }
     };
 
-    if (loading) return <p className="p-8">Loading profile...</p>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-20 text-stone-500 text-sm">
+            Loading profile…
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Edit Profile</h1>
-                <p className="mt-1 text-gray-600">
+        <div>
+            {/* Page header */}
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-cream">Edit Profile</h1>
+                <p className="mt-1.5 text-sm text-stone-400">
                     Update the public profile details used across the portfolio.
                 </p>
             </div>
 
-            {error && <p className="text-red-500 mb-4">{error}</p>}
+            {error && (
+                <div className="mb-6 flex items-center gap-2 rounded-lg border border-red-900/50 bg-red-950/40 px-4 py-3 text-sm text-red-400">
+                    <AlertCircle size={14} className="shrink-0" />
+                    {error}
+                </div>
+            )}
 
-            <form
-                onSubmit={handleSubmit}
-                className="bg-white p-6 rounded shadow-md"
-            >
+            <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Alerts */}
                 {saveMessage && (
-                    <div className="mb-4 rounded bg-green-100 p-3 text-green-700">
+                    <div className="flex items-center gap-2 rounded-lg border border-emerald-800/50 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-400">
+                        <CheckCircle2 size={14} className="shrink-0" />
                         {saveMessage}
                     </div>
                 )}
-                
                 {saveError && (
-                    <div className="mb-4 rounded bg-red-100 p-3 text-red-700">
+                    <div className="flex items-center gap-2 rounded-lg border border-red-900/50 bg-red-950/40 px-4 py-3 text-sm text-red-400">
+                        <AlertCircle size={14} className="shrink-0" />
                         {saveError}
                     </div>
                 )}
 
-                <Input
-                    label="Full Name"
-                    name="fullName"
-                    placeholder="e.g. John Doe"
-                    value={form.fullName}
-                    onChange={handleChange}
-                    required
-                />
-                <Input
-                    label="Title"
-                    name="title"
-                    placeholder="e.g. Senior Full Stack Engineer"
-                    value={form.title}
-                    onChange={handleChange}
-                    required
-                />
-                <Input
-                    label="Short Intro"
-                    name="shortIntro"
-                    placeholder="e.g. Building high-performance web applications."
-                    value={form.shortIntro}
-                    onChange={handleChange}
-                    required
-                />
+                {/* Identity */}
+                <Section title="Identity">
+                    <div>
+                        <FieldLabel>Full Name</FieldLabel>
+                        <DarkInput icon={UserCircle} name="fullName" placeholder="e.g. John Doe" value={form.fullName} onChange={handleChange} required />
+                    </div>
+                    <div>
+                        <FieldLabel>Title / Role</FieldLabel>
+                        <DarkInput icon={Globe} name="title" placeholder="e.g. Senior Full Stack Engineer" value={form.title} onChange={handleChange} required />
+                    </div>
+                    <div>
+                        <FieldLabel>Short Intro <span className="normal-case text-stone-600">(max 200 chars)</span></FieldLabel>
+                        <DarkInput name="shortIntro" placeholder="e.g. Building high-performance web applications." value={form.shortIntro} onChange={handleChange} required maxLength={200} />
+                        <p className="mt-1 text-right text-xs text-stone-600">{form.shortIntro.length}/200</p>
+                    </div>
+                    <div>
+                        <FieldLabel>About Me</FieldLabel>
+                        <div data-color-mode="dark">
+                            <MDEditor
+                                value={form.aboutMe}
+                                onChange={(val) => setForm((prev) => ({ ...prev, aboutMe: val || "" }))}
+                                height={220}
+                                preview="edit"
+                                className="!border-stone-700/70 !bg-stone-900"
+                            />
+                        </div>
+                    </div>
+                </Section>
 
-                <label className="mb-2 block font-medium text-gray-700">About Me</label>
-                <textarea
-                    name="aboutMe"
-                    placeholder="Write a brief overview about your background and skills..."
-                    className="mb-3 w-full rounded border px-3 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    value={form.aboutMe}
-                    onChange={handleChange}
-                    required
-                />
+                {/* Contact */}
+                <Section title="Contact">
+                    <div>
+                        <FieldLabel>Email</FieldLabel>
+                        <DarkInput icon={Mail} type="email" name="email" placeholder="e.g. contact@yourdomain.com" value={form.email} onChange={handleChange} required />
+                    </div>
+                    <div>
+                        <FieldLabel>Phone</FieldLabel>
+                        <DarkInput icon={Phone} name="phone" placeholder="e.g. +1 (555) 000-0000" value={form.phone} onChange={handleChange} required />
+                    </div>
+                    <div>
+                        <FieldLabel>Location</FieldLabel>
+                        <DarkInput icon={MapPin} name="location" placeholder="e.g. San Francisco, CA" value={form.location} onChange={handleChange} required />
+                    </div>
+                </Section>
 
-                <Input
-                    label="Email"
-                    name="email"
-                    placeholder="e.g. contact@yourdomain.com"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                />
-                <Input
-                    label="Phone"
-                    name="phone"
-                    placeholder="e.g. +1 (555) 000-0000"
-                    value={form.phone}
-                    onChange={handleChange}
-                    required
-                />
-                <Input
-                    label="Location"
-                    name="location"
-                    placeholder="e.g. San Francisco, CA"
-                    value={form.location}
-                    onChange={handleChange}
-                    required
-                />
-                <Input
-                    label="GitHub"
-                    name="github"
-                    placeholder="e.g. https://github.com/username"
-                    value={form.github}
-                    onChange={handleChange}
-                />
-                <Input
-                    label="LinkedIn"
-                    name="linkedin"
-                    placeholder="e.g. https://linkedin.com/in/username"
-                    value={form.linkedin}
-                    onChange={handleChange}
-                />
-                <Input
-                    label="Twitter"
-                    name="twitter"
-                    placeholder="e.g. https://twitter.com/username"
-                    value={form.twitter}
-                    onChange={handleChange}
-                />
-                <Input
-                    label="Instagram"
-                    name="instagram"
-                    placeholder="e.g. https://instagram.com/username"
-                    value={form.instagram}
-                    onChange={handleChange}
-                />
-                <Input
-                    label="Resume URL"
-                    name="resumeUrl"
-                    placeholder="e.g. https://drive.google.com/.../resume.pdf"
-                    value={form.resumeUrl}
-                    onChange={handleChange}
-                    required
-                />
-                <Input
-                    label="Profile Picture URL"
-                    name="profilePictureUrl"
-                    placeholder="e.g. https://yourhost.com/avatar.jpg"
-                    value={form.profilePictureUrl}
-                    onChange={handleChange}
-                    required
-                />
+                {/* Social Links */}
+                <Section title="Social Links">
+                    <div>
+                        <FieldLabel>GitHub</FieldLabel>
+                        <DarkInput icon={Github} name="github" placeholder="https://github.com/username" value={form.github} onChange={handleChange} />
+                    </div>
+                    <div>
+                        <FieldLabel>LinkedIn</FieldLabel>
+                        <DarkInput icon={Linkedin} name="linkedin" placeholder="https://linkedin.com/in/username" value={form.linkedin} onChange={handleChange} />
+                    </div>
+                    <div>
+                        <FieldLabel>Twitter / X</FieldLabel>
+                        <DarkInput icon={Twitter} name="twitter" placeholder="https://twitter.com/username" value={form.twitter} onChange={handleChange} />
+                    </div>
+                    <div>
+                        <FieldLabel>Instagram</FieldLabel>
+                        <DarkInput icon={Instagram} name="instagram" placeholder="https://instagram.com/username" value={form.instagram} onChange={handleChange} />
+                    </div>
+                </Section>
 
-                <button
-                    disabled={disabled}
-                    className={`rounded px-4 py-2 font-medium text-white transition-colors ${
-                        disabled ? "bg-blue-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
-                    }`}
-                >
-                    {disabled ? "Saving..." : "Save Profile"}
-                </button>
+                {/* Media & Assets */}
+                <Section title="Media & Assets">
+                    <div>
+                        <FieldLabel>Resume URL</FieldLabel>
+                        <DarkInput icon={FileText} name="resumeUrl" placeholder="https://drive.google.com/.../resume.pdf" value={form.resumeUrl} onChange={handleChange} required />
+                    </div>
+                    <div>
+                        <ImageUploadField
+                            label="Profile Picture"
+                            value={form.profilePictureUrl}
+                            onChange={(url) => setForm((prev) => ({ ...prev, profilePictureUrl: url }))}
+                            required
+                        />
+                    </div>
+                </Section>
+
+                {/* Display Settings */}
+                <Section title="Display Settings">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <FieldLabel>Projects shown on homepage</FieldLabel>
+                            <DarkInput icon={Hash} type="number" name="homeProjectsCount" min={1} max={20} value={form.homeProjectsCount} onChange={handleChange} />
+                        </div>
+                        <div>
+                            <FieldLabel>Skills per category on homepage</FieldLabel>
+                            <DarkInput icon={Hash} type="number" name="homeSkillsPerCategory" min={1} max={20} value={form.homeSkillsPerCategory} onChange={handleChange} />
+                        </div>
+                    </div>
+                </Section>
+
+                {/* Submit */}
+                <div className="flex items-center gap-4 pt-1">
+                    <button
+                        disabled={disabled}
+                        type="submit"
+                        className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-[background-color,transform] duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
+                            disabled
+                                ? "cursor-not-allowed bg-crimson/40"
+                                : "bg-crimson hover:bg-red-700 active:scale-[0.98] motion-reduce:active:scale-100"
+                        }`}
+                    >
+                        <Save size={15} />
+                        {disabled ? "Saving…" : "Save Profile"}
+                    </button>
+                    {saveMessage && (
+                        <span className="flex items-center gap-1.5 text-sm text-emerald-400">
+                            <CheckCircle2 size={14} /> Saved
+                        </span>
+                    )}
+                </div>
             </form>
         </div>
     );

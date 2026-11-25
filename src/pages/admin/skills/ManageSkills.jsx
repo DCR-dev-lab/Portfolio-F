@@ -1,56 +1,42 @@
 import { useEffect, useState } from "react";
 import api from "../../../services/api";
-
 import SkillList from "./SkillList";
-import AddSkill from "./AddSkill";
-import EditSkill from "./EditSkill";
+import { Loader2 } from "lucide-react";
 
 const ManageSkills = () => {
     const [skills, setSkills] = useState([]);
-    const [mode, setMode] = useState("list"); // list | add | edit
-    const [selectedSkill, setSelectedSkill] = useState(null);
+    const [loading, setLoading] = useState(true);
+
     const fetchSkills = async () => {
-        const res = await api.get("/admin/dashboard/skills");
-        setSkills(res.data);
-    }
+        try {
+            const res = await api.get("/admin/dashboard/skills");
+            setSkills(res.data);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchSkills();
     }, []);
 
+    if (loading) {
+        return (
+            <div className="flex h-64 flex-col items-center justify-center gap-3 text-stone-500">
+                <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-crimson" />
+                <p className="text-sm">Loading skills…</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
-            {mode === "list" && (
-                <SkillList
-                    skills={skills}
-                    onAdd={() => setMode("add")}
-                    onEdit={(skill) => {    
-                        setSelectedSkill(skill);
-                        setMode("edit");
-                    }
-                    }
-                    onDelete={fetchSkills}
-                />
-            )}  
-            {mode === "add" && (
-                <AddSkill
-                    onSuccess={() => {
-                        fetchSkills();
-                        setMode("list");
-                    }}
-                    onCancel={() => setMode("list")}
-                />
-            )}
-            {mode === "edit" && (
-                <EditSkill
-                    skill={selectedSkill}
-                    onSuccess={() => {  
-                        fetchSkills();
-                        setMode("list");
-                    }}
-                    onCancel={() => setMode("list")}
-                />
-            )}
+        <div>
+            <SkillList
+                skills={skills}
+                onDelete={fetchSkills}
+            />
         </div>
     );
-}
+};
+
 export default ManageSkills;

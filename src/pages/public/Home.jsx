@@ -52,8 +52,8 @@ const Home = () => {
       setProfile(profileData);
 
       // How many to show comes from the profile settings (admin-editable), with safe limits
-      const projectsLimit = readCount(profileData?.homeProjectsCount, 7, 3, 8);
-      setPerCategory(readCount(profileData?.homeSkillsPerCategory, 8, 4, 12));
+      const projectsLimit = readCount(profileData?.homeProjectsCount, 7, 1, 20);
+      setPerCategory(readCount(profileData?.homeSkillsPerCategory, 8, 1, 20));
 
       const allProjects =
         projectsRes.status === "fulfilled" ? (projectsRes.value.data ?? []) : [];

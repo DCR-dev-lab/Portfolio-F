@@ -1,7 +1,15 @@
+import { useNavigate } from "react-router-dom";
 import SkillForm from "./SkillForm";
 
-const AddSkill = ({ onSuccess, onCancel }) => {
-    return <SkillForm onSuccess={onSuccess} onCancel={onCancel} />;
+const AddSkill = () => {
+    const navigate = useNavigate();
+
+    return (
+        <SkillForm
+            onSuccess={() => navigate("/mod/skills")}
+            onCancel={() => navigate("/mod/skills")}
+        />
+    );
 };
 
 export default AddSkill;
