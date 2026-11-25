@@ -24,12 +24,14 @@ const ACTION_META = {
     UPDATE_SKILL:     { label: "Skill updated",     icon: Pencil,      color: "text-blue-400",    bg: "bg-blue-950/40 border-blue-800/40" },
     DELETE_SKILL:     { label: "Skill deleted",     icon: X,           color: "text-red-400",     bg: "bg-red-950/40 border-red-800/40" },
     UPDATE_PROFILE:   { label: "Profile updated",   icon: UserCircle,  color: "text-amber-400",   bg: "bg-amber-950/40 border-amber-800/40" },
+    CLEAR_AUDIT_LOGS: { label: "Audit log cleared", icon: Trash2,      color: "text-red-400",     bg: "bg-red-950/40 border-red-800/40" },
 };
 
 const ENTITY_ICON = {
     Project: FolderKanban,
     Skill:   Wrench,
     Profile: UserCircle,
+    AuditLog: Activity,
 };
 
 const formatRelative = (dateStr) => {

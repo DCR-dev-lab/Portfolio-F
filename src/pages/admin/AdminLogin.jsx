@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import api from "../../services/api"
 import Cookies from "js-cookie"
 import usePageSEO from "../../hooks/usePageSEO"
+import { getSafeModRedirect } from "../../utils/security"
 import { Lock, Eye, EyeOff, ShieldCheck } from "lucide-react"
 
 const AdminLogin = () => {
@@ -24,12 +25,16 @@ const AdminLogin = () => {
         try {
             setDisabled(true)
             const response = await api.post("/admin/login", { key })
-            Cookies.set("adminToken", response.data.token, { expires: 1 })
+            Cookies.set("adminToken", response.data.token, {
+                expires: 1 / 48, // 30 minutes matching backend JWT validity
+                secure: window.location.protocol === "https:",
+                sameSite: "strict",
+            })
             setKey("")
             setError("")
             
-            // Return memory: redirect back to intended URL or fallback to dashboard
-            const destination = location.state?.from?.pathname || "/mod/dashboard"
+            // Return memory: redirect back to intended internal /mod URL or fallback to dashboard
+            const destination = getSafeModRedirect(location.state?.from?.pathname)
             navigate(destination, { replace: true })
         } catch (err) {
             setError(err.response?.data?.message || "Invalid access key. Try again.");

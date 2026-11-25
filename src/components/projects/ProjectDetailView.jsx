@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, ArrowLeft, Github, ChevronLeft, ChevronRight } from "lucide-react";
+import { isSafeUrl, sanitizeHref, sanitizeImageUrl } from "../../utils/security";
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -102,8 +103,8 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
         reduceMotion ? { duration: 0 } : { duration, delay, ease: "easeOut" };
 
     const lead = project?.shortDescription || project?.description;
-    const hasLive = project?.projectUrl && project.projectUrl !== "#";
-    const hasSource = project?.githubUrl && project.githubUrl !== "#";
+    const hasLive = project?.projectUrl && isSafeUrl(project.projectUrl, { allowMailTel: false });
+    const hasSource = project?.githubUrl && isSafeUrl(project.githubUrl, { allowMailTel: false });
 
     if (typeof document === "undefined") return null;
 
@@ -127,10 +128,10 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
                 >
                     {/* Background artwork under a dark scrim */}
                     <div className="absolute inset-0 z-0 select-none overflow-hidden" aria-hidden="true">
-                        {project.imageUrl ? (
+                        {sanitizeImageUrl(project.imageUrl) ? (
                             <motion.img
                                 key={projectId}
-                                src={project.imageUrl}
+                                src={sanitizeImageUrl(project.imageUrl)}
                                 alt=""
                                 initial={{ scale: 1.06, opacity: 0.3 }}
                                 animate={{ scale: 1, opacity: 1 }}
@@ -240,7 +241,7 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
                                     <div className="flex items-center gap-3 mt-8 flex-wrap">
                                         {hasLive && (
                                             <a
-                                                href={project.projectUrl}
+                                                href={sanitizeHref(project.projectUrl)}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-red-600 hover:bg-red-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-red-950/60 transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -251,7 +252,7 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
                                         )}
                                         {hasSource && (
                                             <a
-                                                href={project.githubUrl}
+                                                href={sanitizeHref(project.githubUrl)}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-stone-900/90 hover:bg-stone-800 border border-stone-800 text-stone-200 font-medium text-xs sm:text-sm transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"

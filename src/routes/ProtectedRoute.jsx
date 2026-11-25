@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
+import { isTokenStructurallyValid } from "../utils/security";
 
 /**
  * ProtectedRoute — Enforces authentication for the /mod route hierarchy.
@@ -10,11 +11,14 @@ const ProtectedRoute = () => {
     const location = useLocation();
     const adminToken = Cookies.get("adminToken");
 
-    return adminToken ? (
-        <Outlet />
-    ) : (
-        <Navigate to="/mod/login" state={{ from: location }} replace />
-    );
+    if (!isTokenStructurallyValid(adminToken)) {
+        if (adminToken) {
+            Cookies.remove("adminToken");
+        }
+        return <Navigate to="/mod/login" state={{ from: location }} replace />;
+    }
+
+    return <Outlet />;
 };
 
 export default ProtectedRoute;

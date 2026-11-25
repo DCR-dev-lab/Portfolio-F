@@ -4,6 +4,7 @@ import { Download, ArrowRight, ChevronDown } from "lucide-react";
 import PulseDot from "../ui/PulseDot";
 import SocialLinks from "../common/SocialLinks";
 import ParticleHeading from "../particles/ParticleHeading";
+import { isSafeUrl, sanitizeHref } from "../../utils/security";
 
 /**
  * Hero
@@ -55,16 +56,6 @@ const Hero = ({ profile, onScrollToNext }) => {
       nextSection.scrollIntoView({ behavior: "smooth" });
     } else {
       window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
-    }
-  };
-
-  const validateUrl = (url) => {
-    if (!url) return false;
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
     }
   };
 
@@ -121,9 +112,9 @@ const Hero = ({ profile, onScrollToNext }) => {
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
 
-          {resumeUrl && validateUrl(resumeUrl) ? (
+          {resumeUrl && isSafeUrl(resumeUrl, { allowMailTel: false }) ? (
             <a
-              href={resumeUrl}
+              href={sanitizeHref(resumeUrl)}
               target="_blank"
               rel="noreferrer"
               className={`${btnBase} bg-stone-900/60 backdrop-blur border border-stone-700 text-stone-200 hover:text-white hover:border-red-500/60`}

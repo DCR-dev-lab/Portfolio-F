@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useMotionValue } from "framer-motion";
+import { sanitizeImageUrl } from "../../utils/security";
 
 // Hash function for pseudo-random spatial seeding
 function hash3(cx, cy, cz, salt) {
@@ -224,7 +225,7 @@ const InfiniteCanvas = ({
                 el.dataset.projIndex = String(t.projIdx);
 
                 const img = document.createElement("img");
-                img.src = project?.imageUrl || project?.src || "";
+                img.src = sanitizeImageUrl(project?.imageUrl || project?.src || "");
                 img.alt = project?.title || "Portfolio Project";
                 img.draggable = false;
                 img.style.width = "100%";

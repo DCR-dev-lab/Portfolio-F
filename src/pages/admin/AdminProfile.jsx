@@ -3,6 +3,7 @@ import api from "../../services/api";
 import { toast } from "sonner";
 import MDEditor from "@uiw/react-md-editor";
 import ImageUploadField from "../../components/ui/ImageUploadField";
+import { SAFE_MD_PREVIEW_OPTIONS } from "../../utils/security";
 import {
     UserCircle,
     Save,
@@ -226,6 +227,7 @@ const AdminProfile = () => {
                                 onChange={(val) => setForm((prev) => ({ ...prev, aboutMe: val || "" }))}
                                 height={220}
                                 preview="edit"
+                                previewOptions={SAFE_MD_PREVIEW_OPTIONS}
                                 className="!border-stone-700/70 !bg-stone-900"
                             />
                         </div>

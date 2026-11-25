@@ -2,6 +2,8 @@ import { useState } from "react";
 import { NavLink, useNavigate, Outlet } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Toaster } from "sonner";
+import api from "../../services/api";
+import usePageSEO from "../../hooks/usePageSEO";
 import {
     LayoutDashboard,
     FolderKanban,
@@ -23,12 +25,23 @@ const NAV_ITEMS = [
 ];
 
 const AdminLayout = () => {
+    usePageSEO({
+        title: "Mod Studio",
+        description: "Restricted moderation dashboard.",
+        noindex: true,
+    });
+
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try {
+            await api.post("/admin/logout");
+        } catch {
+            // Best-effort server-side token revocation
+        }
         Cookies.remove("adminToken");
-        navigate("/mod/login");
+        navigate("/mod/login", { replace: true });
     };
 
     const SidebarContent = () => (

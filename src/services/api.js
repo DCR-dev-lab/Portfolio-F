@@ -20,4 +20,28 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Automatic session eviction on 401/403 token expiration
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response &&
+      (error.response.status === 401 || error.response.status === 403)
+    ) {
+      // If server rejected token or token expired, wipe cookie and redirect
+      if (Cookies.get("adminToken")) {
+        Cookies.remove("adminToken");
+      }
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/mod") &&
+        window.location.pathname !== "/mod/login"
+      ) {
+        window.location.href = "/mod/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

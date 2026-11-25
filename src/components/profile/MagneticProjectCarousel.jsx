@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import portfolioPlaceholder from "../../assets/images/portfolio-placeholder.svg";
 import SpotlightProjectContent from "./SpotlightProjectContent";
+import { sanitizeImageUrl } from "../../utils/security";
 
 /**
  * MagneticProjectCarousel (Option 3 — Originkit Inspired)
@@ -186,7 +187,7 @@ const MagneticProjectCarousel = ({
           const { width, height } = sizeFor(i);
           const factor = factors[i] ?? 0;
           const index = String(i + 1).padStart(2, "0");
-          const imageSrc = p.imageUrl || portfolioPlaceholder;
+          const imageSrc = sanitizeImageUrl(p.imageUrl, portfolioPlaceholder);
 
           return (
             <article

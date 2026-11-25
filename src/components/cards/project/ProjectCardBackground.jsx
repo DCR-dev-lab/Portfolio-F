@@ -1,8 +1,11 @@
 import { motion } from "motion/react";
+import { sanitizeImageUrl } from "../../../utils/security";
 
-export const ProjectCardBackground = ({ project, isHovered, showCurtain }) => (
+export const ProjectCardBackground = ({ project, isHovered, showCurtain }) => {
+    const safeImageSrc = sanitizeImageUrl(project.imageUrl);
+    return (
     <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl bg-zinc-950">
-        {project.imageUrl ? (
+        {safeImageSrc ? (
             <motion.img
                 animate={{
                     scale: isHovered && !showCurtain ? 1.05 : 1,
@@ -13,7 +16,7 @@ export const ProjectCardBackground = ({ project, isHovered, showCurtain }) => (
                             : "brightness(0.42) contrast(1.05)",
                 }}
                 transition={{ duration: 0.6, ease: "easeInOut" }}
-                src={project.imageUrl}
+                src={safeImageSrc}
                 alt={project.title}
                 className="h-full w-full object-cover grayscale contrast-105 group-hover:grayscale-0 transition-all duration-700"
             />
@@ -29,4 +32,5 @@ export const ProjectCardBackground = ({ project, isHovered, showCurtain }) => (
 
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent pointer-events-none" />
     </div>
-);
+    );
+};

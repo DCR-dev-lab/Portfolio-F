@@ -4,6 +4,7 @@ import {
     ExternalLink,
     Github,
 } from "lucide-react";
+import { isSafeUrl, sanitizeHref } from "../../../utils/security";
 
 export const ProjectCardSurface = ({
     project,
@@ -73,9 +74,9 @@ export const ProjectCardSurface = ({
                 </button>
 
                 <div className="flex items-center gap-2.5 border-l border-stone-700 pl-3">
-                    {project.projectUrl && (
+                    {project.projectUrl && isSafeUrl(project.projectUrl, { allowMailTel: false }) && (
                         <a
-                            href={project.projectUrl}
+                            href={sanitizeHref(project.projectUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -85,9 +86,9 @@ export const ProjectCardSurface = ({
                             <ExternalLink className="h-4 w-4" />
                         </a>
                     )}
-                    {project.githubUrl && (
+                    {project.githubUrl && isSafeUrl(project.githubUrl, { allowMailTel: false }) && (
                         <a
-                            href={project.githubUrl}
+                            href={sanitizeHref(project.githubUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}

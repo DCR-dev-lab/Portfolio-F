@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Upload, Link as LinkIcon, X, Image, Loader2, CheckCircle2 } from "lucide-react";
+import { sanitizeImageUrl } from "../../utils/security";
 
 /**
  * ImageUploadField — dual-mode image input.
@@ -36,6 +37,16 @@ const ImageUploadField = ({ value, onChange, label = "Image", required = false }
             setUploadError(
                 "Cloudinary is not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in your .env file."
             );
+            return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+            setUploadError("Only image files (PNG, JPG, WebP, SVG, GIF) are supported.");
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            setUploadError("Image size must be less than 10MB.");
             return;
         }
 
@@ -176,10 +187,10 @@ const ImageUploadField = ({ value, onChange, label = "Image", required = false }
             )}
 
             {/* Preview */}
-            {value && (
+            {sanitizeImageUrl(value) && (
                 <div className="flex items-center gap-2 rounded-lg border border-stone-800/60 bg-stone-900/40 p-2">
                     <img
-                        src={value}
+                        src={sanitizeImageUrl(value)}
                         alt="Preview"
                         className="h-10 w-16 rounded object-cover"
                         onError={(e) => { e.target.style.display = "none"; }}

@@ -1,5 +1,6 @@
 import { Github, Linkedin, Twitter, Instagram, ExternalLink, ArrowUpRight } from "lucide-react";
 import StarfieldButton from "./StarfieldButton";
+import { isSafeUrl, sanitizeHref } from "../../utils/security";
 
 const PLATFORM_CONFIG = [
     { key: "github", label: "GitHub", icon: Github, defaultUrl: "https://github.com" },
@@ -7,16 +8,6 @@ const PLATFORM_CONFIG = [
     { key: "twitter", label: "Twitter", icon: Twitter, defaultUrl: "https://twitter.com" },
     { key: "instagram", label: "Instagram", icon: Instagram, defaultUrl: "https://instagram.com" },
 ];
-
-const validateUrl = (url) => {
-    if (!url) return false;
-    try {
-        new URL(url);
-        return true;
-    } catch {
-        return false;
-    }
-};
 
 /**
  * SocialLinks
@@ -37,8 +28,8 @@ const SocialLinks = ({
         const url = rawUrl || (fallbackToDefaults ? platform.defaultUrl : null);
         return {
             ...platform,
-            url,
-            isValid: validateUrl(url),
+            url: sanitizeHref(url),
+            isValid: isSafeUrl(url, { allowMailTel: false }),
         };
     }).filter((item) => item.isValid);
 

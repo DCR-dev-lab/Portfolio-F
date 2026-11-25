@@ -1,6 +1,7 @@
 import { ExternalLink, Github } from "lucide-react";
+import { isSafeUrl, sanitizeHref } from "../../utils/security";
 
-export const hasValidUrl = (url) => Boolean(url && url.trim() && url !== "#");
+export const hasValidUrl = (url) => isSafeUrl(url, { allowMailTel: false });
 
 /**
  * Reusable spotlight project details block:
@@ -55,7 +56,7 @@ export const SpotlightProjectContent = ({
         <div className="mt-5 flex flex-wrap gap-2.5 sm:gap-3">
           {hasValidUrl(project.projectUrl) && (
             <a
-              href={project.projectUrl}
+              href={sanitizeHref(project.projectUrl)}
               target="_blank"
               rel="noopener noreferrer"
               tabIndex={isOpen ? 0 : -1}
@@ -68,7 +69,7 @@ export const SpotlightProjectContent = ({
           )}
           {hasValidUrl(project.githubUrl) && (
             <a
-              href={project.githubUrl}
+              href={sanitizeHref(project.githubUrl)}
               target="_blank"
               rel="noopener noreferrer"
               tabIndex={isOpen ? 0 : -1}

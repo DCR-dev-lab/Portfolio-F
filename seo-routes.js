@@ -105,6 +105,20 @@ export const ROUTE_SEO = {
   }
 };
 
+const escapeHtmlAttr = (str = "") =>
+  String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+const sanitizeHostHeader = (rawHost) => {
+  if (typeof rawHost !== "string") return "localhost:5173";
+  const trimmed = rawHost.trim();
+  return /^[a-z0-9.-]+(:\d{1,5})?$/i.test(trimmed) ? trimmed : "localhost:5173";
+};
+
 /**
  * Injects route-specific SEO tags (title, description, canonical, h1, h2, text content)
  * into raw index.html for crawlers and bots running in Text-Only mode.
@@ -112,27 +126,29 @@ export const ROUTE_SEO = {
 export function injectSeoToHtml(rawHtml, routePath = "/", origin = "http://localhost:5173") {
   const cleanPath = routePath.split('?')[0].replace(/\/$/, '') || '/';
   const meta = ROUTE_SEO[cleanPath] || ROUTE_SEO['/'];
-  const canonicalUrl = `${origin.replace(/\/$/, '')}${cleanPath === '/' ? '/' : cleanPath}`;
+  const canonicalUrl = escapeHtmlAttr(`${origin.replace(/\/$/, '')}${cleanPath === '/' ? '/' : cleanPath}`);
+  const safeTitle = escapeHtmlAttr(meta.title);
+  const safeDesc = escapeHtmlAttr(meta.description);
 
   let html = rawHtml;
 
   // 1. Replace Title
-  html = html.replace(/<title>.*?<\/title>/i, `<title>${meta.title}</title>`);
+  html = html.replace(/<title>.*?<\/title>/i, `<title>${safeTitle}</title>`);
 
   // 2. Replace Description
   html = html.replace(
     /<meta\s+name="description"\s+content=".*?"\s*\/?>/i,
-    `<meta name="description" content="${meta.description}" />`
+    `<meta name="description" content="${safeDesc}" />`
   );
 
   // 3. Replace OG Title and Description
   html = html.replace(
     /<meta\s+property="og:title"\s+content=".*?"\s*\/?>/i,
-    `<meta property="og:title" content="${meta.title}" />`
+    `<meta property="og:title" content="${safeTitle}" />`
   );
   html = html.replace(
     /<meta\s+property="og:description"\s+content=".*?"\s*\/?>/i,
-    `<meta property="og:description" content="${meta.description}" />`
+    `<meta property="og:description" content="${safeDesc}" />`
   );
   html = html.replace(
     /<meta\s+property="og:url"\s+content=".*?"\s*\/?>/i,
@@ -142,11 +158,11 @@ export function injectSeoToHtml(rawHtml, routePath = "/", origin = "http://local
   // 4. Replace Twitter Title and Description
   html = html.replace(
     /<meta\s+name="twitter:title"\s+content=".*?"\s*\/?>/i,
-    `<meta name="twitter:title" content="${meta.title}" />`
+    `<meta name="twitter:title" content="${safeTitle}" />`
   );
   html = html.replace(
     /<meta\s+name="twitter:description"\s+content=".*?"\s*\/?>/i,
-    `<meta name="twitter:description" content="${meta.description}" />`
+    `<meta name="twitter:description" content="${safeDesc}" />`
   );
 
   // 5. Inject / Replace Canonical Link
@@ -194,7 +210,8 @@ export function viteSeoPlugin() {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'SAMEORIGIN',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https:;"
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https:; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none';"
   };
 
   return {
@@ -210,7 +227,7 @@ export function viteSeoPlugin() {
             const indexPath = path.resolve(server.config.root, 'index.html');
             let template = fs.readFileSync(indexPath, 'utf-8');
             template = await server.transformIndexHtml(req.url, template);
-            const host = req.headers.host || 'localhost:5173';
+            const host = sanitizeHostHeader(req.headers.host);
             const protocol = req.connection.encrypted ? 'https' : 'http';
             const origin = `${protocol}://${host}`;
             const prerendered = injectSeoToHtml(template, cleanPath, origin);

@@ -6,6 +6,7 @@ import {
     Trash2,
     X,
 } from "lucide-react";
+import { isSafeUrl, sanitizeHref } from "../../../utils/security";
 
 export const ProjectCardCurtain = ({
     project,
@@ -101,9 +102,9 @@ export const ProjectCardCurtain = ({
                     )}
 
                     <div className="flex gap-2.5 flex-wrap pt-2">
-                        {project.projectUrl && (
+                        {project.projectUrl && isSafeUrl(project.projectUrl, { allowMailTel: false }) && (
                             <a
-                                href={project.projectUrl}
+                                href={sanitizeHref(project.projectUrl)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-full text-xs font-semibold shadow-sm shadow-red-900/40 transition-colors duration-200 cursor-pointer active:scale-95 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
@@ -112,9 +113,9 @@ export const ProjectCardCurtain = ({
                                 <span>Live Demo</span>
                             </a>
                         )}
-                        {project.githubUrl && (
+                        {project.githubUrl && isSafeUrl(project.githubUrl, { allowMailTel: false }) && (
                             <a
-                                href={project.githubUrl}
+                                href={sanitizeHref(project.githubUrl)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 bg-stone-900 border border-stone-800 text-stone-300 px-5 py-2 rounded-full text-xs font-medium hover:text-white hover:border-stone-700 transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"

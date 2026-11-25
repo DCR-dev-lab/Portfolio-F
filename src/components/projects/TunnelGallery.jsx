@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { sanitizeImageUrl } from "../../utils/security";
 
 const TUNNEL_WIDTH = 2.2;
 const TUNNEL_HEIGHT = 1.9;
@@ -102,7 +103,7 @@ const TunnelGallery = ({
     const entries = useMemo(
         () =>
             validProjects
-                .map((p, i) => ({ url: p.imageUrl, projectIndex: i }))
+                .map((p, i) => ({ url: sanitizeImageUrl(p.imageUrl), projectIndex: i }))
                 .filter((e) => e.url),
         [validProjects]
     );

@@ -1,5 +1,6 @@
 import { Layers } from "lucide-react";
 import { getProjectId } from "./ProjectDetailView";
+import { sanitizeImageUrl } from "../../utils/security";
 
 /**
  * BentoMosaicGrid
@@ -57,17 +58,17 @@ const BentoMosaicGrid = ({ projects = [], onSelectProject }) => (
                         {/* Artwork: a grayscale base with a colour copy that fades in on top.
                             Fading opacity is much cheaper than animating a filter. */}
                         <div className="absolute inset-0 z-0 bg-obsidian overflow-hidden">
-                            {project.imageUrl ? (
+                            {sanitizeImageUrl(project.imageUrl) ? (
                                 <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-105 group-focus-visible:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
                                     <img
-                                        src={project.imageUrl}
+                                        src={sanitizeImageUrl(project.imageUrl)}
                                         alt=""
                                         loading="lazy"
                                         decoding="async"
                                         className="absolute inset-0 w-full h-full object-cover grayscale brightness-90"
                                     />
                                     <img
-                                        src={project.imageUrl}
+                                        src={sanitizeImageUrl(project.imageUrl)}
                                         alt=""
                                         aria-hidden="true"
                                         loading="lazy"

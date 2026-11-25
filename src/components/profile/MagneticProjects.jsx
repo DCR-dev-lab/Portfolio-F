@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import portfolioPlaceholder from "../../assets/images/portfolio-placeholder.svg";
 import ExpandedProjects from "./ExpandedProjects";
 import SpotlightProjectContent from "./SpotlightProjectContent";
+import { sanitizeImageUrl } from "../../utils/security";
 import { clamp, computeLayout, GAP, magneticTargets, smooth } from "./magneticProjectUtils";
 
 /**
@@ -201,7 +202,7 @@ const MagneticProjects = ({ projects = [] }) => {
                         const isOpen = open === i;
                         const dimmed = open !== null && !isOpen;
                         const index = String(i + 1).padStart(2, "0");
-                        const imageSrc = p.imageUrl || portfolioPlaceholder;
+                        const imageSrc = sanitizeImageUrl(p.imageUrl, portfolioPlaceholder);
                         return (
                             <article
                                 key={p._id ?? i}

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useAnimate, useReducedMotion } from "motion/react";
+import { sanitizeHref } from "../../utils/security";
 
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
@@ -228,7 +229,7 @@ export default function StarfieldButton({
     "aria-label": ariaLabel || (showText ? undefined : label || undefined),
     ...(link
       ? {
-          href: link,
+          href: sanitizeHref(link),
           target: newTab ? "_blank" : undefined,
           rel: newTab ? "noopener noreferrer" : undefined,
         }

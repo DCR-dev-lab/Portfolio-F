@@ -1,6 +1,7 @@
 import { ArrowUpRight, MapPin } from "lucide-react";
 import useScrollReveal from "../../hooks/useScrollReveal";
 import { useReducedMotion } from "motion/react";
+import { isSafeUrl, sanitizeHref } from "../../utils/security";
 
 /**
  * AboutMe
@@ -106,9 +107,9 @@ const AboutMe = ({ about, profile }) => {
           </div>
 
           {/* Resume link — minimal */}
-          {profile?.resumeUrl && (
+          {profile?.resumeUrl && isSafeUrl(profile.resumeUrl, { allowMailTel: false }) && (
             <a
-              href={profile.resumeUrl}
+              href={sanitizeHref(profile.resumeUrl)}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View resume in a new tab"

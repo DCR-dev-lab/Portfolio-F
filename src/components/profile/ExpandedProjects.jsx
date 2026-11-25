@@ -1,6 +1,7 @@
 import { useState } from "react";
 import portfolioPlaceholder from "../../assets/images/portfolio-placeholder.svg";
 import SpotlightProjectContent from "./SpotlightProjectContent";
+import { sanitizeImageUrl } from "../../utils/security";
 
 /**
  * ExpandedProjects
@@ -16,7 +17,7 @@ const ExpandedProjects = ({ projects = [] }) => {
             {projects.map((p, i) => {
                 const on = i === active;
                 const index = String(i + 1).padStart(2, "0");
-                const imageSrc = p.imageUrl || portfolioPlaceholder;
+                const imageSrc = sanitizeImageUrl(p.imageUrl, portfolioPlaceholder);
                 return (
                     <article
                         key={p._id ?? i}
