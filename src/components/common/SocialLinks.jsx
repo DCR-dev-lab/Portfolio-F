@@ -116,9 +116,9 @@ const SocialLinks = ({
         );
     }
 
-    // Default "circles" variant
+    // Default "circles" variant with WCAG 44px mobile touch targets
     return (
-        <div className={`flex items-center justify-center gap-2.5 ${className}`}>
+        <div className={`flex items-center justify-center gap-1.5 sm:gap-2.5 ${className}`}>
             {activeLinks.map(({ key, label, url, icon: Icon }) => (
                 <a
                     key={key}
@@ -126,9 +126,11 @@ const SocialLinks = ({
                     target="_blank"
                     rel="noreferrer"
                     aria-label={`Visit ${label} profile`}
-                    className="w-8 h-8 rounded-full bg-stone-900/80 border border-stone-800 flex items-center justify-center text-stone-400 hover:text-red-400 hover:border-stone-700 hover:bg-stone-850 transition-all duration-200"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center group"
                 >
-                    <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span className="w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-stone-900/80 border border-stone-800 flex items-center justify-center text-stone-400 group-hover:text-red-400 group-hover:border-stone-700 group-hover:bg-stone-850 transition-all duration-200">
+                        <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+                    </span>
                 </a>
             ))}
         </div>

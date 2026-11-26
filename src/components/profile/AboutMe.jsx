@@ -13,12 +13,17 @@ const AboutMe = ({ about, profile }) => {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
   const reduce = useReducedMotion();
 
-  const location = profile?.location || "Tamil Nadu, India";
+  const rawLocation = profile?.location || "Tamil Nadu, India";
+  const location = rawLocation.replace(/,([^\s])/g, ", $1");
 
   // The display statement — pulled from profile or falls back to the brand voice
-  const displayStatement =
+  const rawStatement =
     about ||
     "I build fast, resilient web products — from pixel-perfect interfaces to the systems that power them.";
+  const displayStatement = rawStatement
+    .replace(/\s+\./g, ".")
+    .replace(/\s+,/g, ",")
+    .trim();
 
   // Split into lines for staggered reveal.
   // Preserve natural breaks by splitting on em-dash or comma boundaries.
@@ -28,8 +33,11 @@ const AboutMe = ({ about, profile }) => {
   const introParts = profile?.shortIntro
     ? profile.shortIntro.split(".").map((s) => s.trim()).filter(Boolean)
     : [];
-  const bioLine1 = introParts[0] || "Developer with a background in mathematics";
-  const bioLine2 = introParts[1] || "Focused on performance, clean architecture & DX.";
+  const bioLine1 = (introParts[0] || "Developer with a background in mathematics").replace(/\.+$/, "");
+  const bioLine2 =
+    introParts.length > 1
+      ? `${introParts.slice(1).join(". ")}.`
+      : "Focused on performance, clean architecture & DX.";
 
   const delay = (ms) =>
     reduce
@@ -43,7 +51,7 @@ const AboutMe = ({ about, profile }) => {
       ref={sectionRef}
       data-section="about"
       aria-labelledby="about-heading"
-      className="relative min-h-[100dvh] flex flex-col justify-center bg-transparent border-t border-stone-800/40 px-6 sm:px-10 lg:px-16 py-20 md:py-28 overflow-hidden"
+      className="relative min-h-[100dvh] flex flex-col justify-center bg-transparent border-t border-stone-800/40 px-5 sm:px-10 lg:px-16 py-14 sm:py-20 md:py-28 overflow-hidden"
     >
       {/* Subtle top hairline bridge for seamless transition from Hero */}
       <div
@@ -54,20 +62,20 @@ const AboutMe = ({ about, profile }) => {
 
         {/* Top metadata line */}
         <div
-          className="flex items-center justify-between mb-14 md:mb-20"
+          className="flex items-center justify-between mb-8 sm:mb-14 md:mb-20"
           style={delay(0)}
         >
-          <span className="text-[11px] font-mono tracking-[0.18em] uppercase text-stone-500">
+          <span className="text-[11px] font-mono tracking-[0.18em] uppercase text-stone-400 font-medium">
             Who I am
           </span>
-          <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-wide text-stone-500">
-            <MapPin aria-hidden="true" className="w-3 h-3 text-stone-600" />
+          <span className="flex items-center gap-1.5 text-[11px] font-mono tracking-wide text-stone-300">
+            <MapPin aria-hidden="true" className="w-3.5 h-3.5 text-red-500" />
             {location}
           </span>
         </div>
 
         {/* Large display statement — the centrepiece */}
-        <div className="mb-16 md:mb-24">
+        <div className="mb-8 sm:mb-12 md:mb-16">
           {/* sr-only heading for screen readers and section labelling */}
           <h2 id="about-heading" className="sr-only">About</h2>
           {lines.map((line, i) => {
@@ -79,7 +87,7 @@ const AboutMe = ({ about, profile }) => {
                 className="overflow-hidden"
               >
                 <p
-                  className="text-[clamp(2rem,5.5vw,4.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#faf8f5] motion-reduce:transition-none"
+                  className="text-[clamp(1.35rem,4.2vw,3.75rem)] font-semibold leading-[1.2] sm:leading-[1.12] tracking-[-0.03em] text-[#faf8f5] motion-reduce:transition-none"
                 >
                   {text}
                   {accent && (
@@ -91,17 +99,34 @@ const AboutMe = ({ about, profile }) => {
           })}
         </div>
 
+        {/* Engineering Proof Strip — subtle technical discipline */}
+        <div
+          className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 pt-5 sm:pt-6 mb-6 sm:mb-8 border-t border-stone-800/40 text-[11px] font-mono text-stone-500 tracking-wider"
+          style={delay(120 + lines.length * 110 + 40)}
+        >
+          <span className="flex items-center gap-1.5 text-stone-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500/80 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
+            60 FPS WebGL Stage
+          </span>
+          <span className="text-stone-700 hidden sm:inline">•</span>
+          <span className="hover:text-stone-300 transition-colors">Sub-20ms Frame Budget</span>
+          <span className="text-stone-700 hidden sm:inline">•</span>
+          <span className="hover:text-stone-300 transition-colors">Zero-Reflow Physics</span>
+          <span className="text-stone-700 hidden sm:inline">•</span>
+          <span className="hover:text-stone-300 transition-colors">Static SEO Pre-rendered</span>
+        </div>
+
         {/* Bottom row: compact bio + resume */}
         <div
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-8 border-t border-stone-800/50"
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-6 sm:pt-8 border-t border-stone-800/50"
           style={delay(120 + lines.length * 110 + 80)}
         >
           {/* Two-line bio */}
-          <div className="space-y-1.5">
-            <p className="text-[13px] font-mono text-stone-400 leading-relaxed">
+          <div className="space-y-1 sm:space-y-1.5">
+            <p className="text-xs sm:text-[13px] font-mono text-stone-300 leading-relaxed">
               {bioLine1}.
             </p>
-            <p className="text-[13px] font-mono text-stone-500 leading-relaxed">
+            <p className="text-xs sm:text-[13px] font-mono text-stone-400 leading-relaxed">
               {bioLine2}
             </p>
           </div>
@@ -113,7 +138,7 @@ const AboutMe = ({ about, profile }) => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View resume in a new tab"
-              className="group inline-flex items-center gap-2 text-[13px] font-mono text-stone-400 hover:text-[#faf8f5] transition-colors duration-300 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              className="group inline-flex items-center gap-2 text-xs sm:text-[13px] font-mono text-stone-400 hover:text-[#faf8f5] transition-colors duration-300 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             >
               <span>View Resume</span>
               <ArrowUpRight

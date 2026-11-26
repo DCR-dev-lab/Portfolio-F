@@ -5,7 +5,7 @@ import AboutMe from "../../components/profile/AboutMe";
 import SkillsPreview from "../../components/profile/SkillsPreview";
 import FeaturedProjects from "../../components/profile/FeaturedProjects";
 import ContactCTA from "../../components/profile/ContactCTA";
-import PageLoader from "../../components/common/PageLoader";
+import WaypointRail from "../../components/common/WaypointRail";
 import PageError from "../../components/common/PageError";
 
 import { getProfile } from "../../services/profile.service";
@@ -19,6 +19,28 @@ const readCount = (value, fallback, min, max) => {
   return Number.isFinite(n) && n > 0 ? Math.min(max, Math.max(min, n)) : fallback;
 };
 
+const CACHE_KEY = "dcr_home_cache_v1";
+
+const getCachedHomeData = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedHomeData = (data) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    sessionStorage.setItem("dcr_visited_home", "true");
+  } catch {
+    // quota exceeded or private mode, safe to ignore
+  }
+};
+
 const Home = () => {
   usePageSEO({
     title: "Denny Charles Raj | Full Stack Developer & UI Architect",
@@ -26,18 +48,21 @@ const Home = () => {
       "Official developer portfolio of Denny Charles Raj (DCR) showcasing modern full-stack web applications, system architectures, and technical skill mastery.",
   });
 
-  const [profile, setProfile] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const [skills, setSkills] = useState([]);
-  const [perCategory, setPerCategory] = useState(8);
-  const [loading, setLoading] = useState(true);
+  const [cached] = useState(() => getCachedHomeData());
+  const isReturnVisit = Boolean(cached?.profile);
+
+  const [profile, setProfile] = useState(() => cached?.profile ?? null);
+  const [projects, setProjects] = useState(() => cached?.projects ?? []);
+  const [skills, setSkills] = useState(() => cached?.skills ?? []);
+  const [perCategory, setPerCategory] = useState(() => cached?.perCategory ?? 8);
+  const [loading, setLoading] = useState(() => !isReturnVisit);
   const [error, setError] = useState("");
   const [slow, setSlow] = useState(false);
-  const [loaderGone, setLoaderGone] = useState(false);
 
-  const loadHomeData = async () => {
-    setLoading(true);
-    setLoaderGone(false);
+  const loadHomeData = async (isBackground = false) => {
+    if (!isBackground) {
+      setLoading(true);
+    }
     try {
       // Fetch in parallel; one failing request shouldn't take the whole page down
       const [profileRes, projectsRes, skillsRes] = await Promise.allSettled([
@@ -53,7 +78,8 @@ const Home = () => {
 
       // How many to show comes from the profile settings (admin-editable), with safe limits
       const projectsLimit = readCount(profileData?.homeProjectsCount, 7, 1, 20);
-      setPerCategory(readCount(profileData?.homeSkillsPerCategory, 8, 1, 20));
+      const computedPerCategory = readCount(profileData?.homeSkillsPerCategory, 8, 1, 20);
+      setPerCategory(computedPerCategory);
 
       const allProjects =
         projectsRes.status === "fulfilled" ? (projectsRes.value.data ?? []) : [];
@@ -62,21 +88,34 @@ const Home = () => {
         ...allProjects.filter((p) => p.featured),
         ...allProjects.filter((p) => !p.featured),
       ];
-      setProjects(ordered.slice(0, projectsLimit));
+      const finalProjects = ordered.slice(0, projectsLimit);
+      setProjects(finalProjects);
 
       // keep the full list: the skills section groups it by category itself
-      setSkills(skillsRes.status === "fulfilled" ? (skillsRes.value.data ?? []) : []);
+      const finalSkills = skillsRes.status === "fulfilled" ? (skillsRes.value.data ?? []) : [];
+      setSkills(finalSkills);
+
+      // Store in session cache for instant future returns
+      setCachedHomeData({
+        profile: profileData,
+        projects: finalProjects,
+        skills: finalSkills,
+        perCategory: computedPerCategory,
+      });
 
       setError("");
     } catch (err) {
-      setError(err.message || "Failed to load data.");
+      // If we already have cached data rendered, don't flash an error screen
+      if (!isReturnVisit) {
+        setError(err.message || "Failed to load data.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadHomeData();
+    loadHomeData(isReturnVisit);
   }, []);
 
   // Free hosting can take a few seconds to wake up: say so instead of looking frozen
@@ -89,35 +128,26 @@ const Home = () => {
     return () => clearTimeout(t);
   }, [loading]);
 
-  // Keep the loader mounted just long enough to fade out OVER the hero,
-  // so the particles start gathering while it dissolves (no hard cut)
-  useEffect(() => {
-    if (loading || error) return;
-    const t = setTimeout(() => setLoaderGone(true), 800);
-    return () => clearTimeout(t);
-  }, [loading, error]);
-
-  if (error && !loading) return <PageError error={error} onRetry={loadHomeData} />;
+  if (error && !loading) return <PageError error={error} onRetry={() => loadHomeData(false)} />;
 
   return (
     <>
-      {!loading && (
-        <div className="flex flex-col bg-transparent">
-          <Hero profile={profile} />
-          <AboutMe about={profile?.aboutMe} profile={profile} />
-          <FeaturedProjects projects={projects} />
-          <SkillsPreview skills={skills} perCategory={perCategory} />
-          <ContactCTA profile={profile} />
-        </div>
-      )}
+      <WaypointRail />
+      <div className="flex flex-col bg-transparent">
+        <Hero profile={profile} isReturnVisit={isReturnVisit} />
+        <AboutMe about={profile?.aboutMe} profile={profile} />
+        <FeaturedProjects projects={projects} loading={loading && projects.length === 0} />
+        <SkillsPreview skills={skills} perCategory={perCategory} loading={loading && skills.length === 0} />
+        <ContactCTA profile={profile} />
+      </div>
 
-      {!loaderGone && (
+      {slow && loading && (
         <div
-          className={`fixed inset-0 z-40 transition-opacity duration-700 ease-out ${
-            loading ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+          role="status"
+          aria-live="polite"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 rounded-full bg-stone-900/90 border border-stone-800 text-[11px] font-mono text-stone-300 backdrop-blur-md shadow-lg animate-pulse"
         >
-          <PageLoader message={slow ? "Waking things up…" : undefined} />
+          Waking things up…
         </div>
       )}
     </>

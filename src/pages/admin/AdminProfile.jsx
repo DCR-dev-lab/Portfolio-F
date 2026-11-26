@@ -35,6 +35,8 @@ const EMPTY_FORM = {
     instagram: "",
     resumeUrl: "",
     profilePictureUrl: "",
+    isAvailable: true,
+    availabilityText: "Available for new projects",
     homeProjectsCount: 7,
     homeSkillsPerCategory: 8,
 };
@@ -80,6 +82,8 @@ const AdminProfile = () => {
                         instagram: (res.data.socialLinks?.instagram || "").trim(),
                         resumeUrl: (res.data.resumeUrl || "").trim(),
                         profilePictureUrl: (res.data.profilePictureUrl || "").trim(),
+                        isAvailable: res.data.isAvailable ?? true,
+                        availabilityText: (res.data.availabilityText || "Available for new projects").trim(),
                         homeProjectsCount: res.data.homeProjectsCount ?? 7,
                         homeSkillsPerCategory: res.data.homeSkillsPerCategory ?? 8,
                     };
@@ -115,6 +119,8 @@ const AdminProfile = () => {
                 location: form.location,
                 resumeUrl: form.resumeUrl,
                 profilePictureUrl: form.profilePictureUrl,
+                isAvailable: Boolean(form.isAvailable),
+                availabilityText: (form.availabilityText || "").trim() || (form.isAvailable ? "Available for new projects" : "Currently unavailable"),
                 homeProjectsCount: Number(form.homeProjectsCount),
                 homeSkillsPerCategory: Number(form.homeSkillsPerCategory),
                 socialLinks: {
@@ -241,6 +247,40 @@ const AdminProfile = () => {
 
                 {/* Display Settings */}
                 <Section title="Display Settings">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+                        <div className="flex items-center justify-between rounded-lg border border-stone-800 bg-stone-900/50 px-4 py-3">
+                            <div>
+                                <p className="text-sm font-medium text-stone-200">Available for work</p>
+                                <p className="text-xs text-stone-500">Controls the live pulse dot on Hero</p>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={form.isAvailable}
+                                onClick={() => setForm((prev) => ({ ...prev, isAvailable: !prev.isAvailable }))}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
+                                    form.isAvailable ? "bg-crimson" : "bg-stone-700"
+                                }`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
+                                        form.isAvailable ? "translate-x-5" : "translate-x-0"
+                                    }`}
+                                />
+                            </button>
+                        </div>
+                        <div>
+                            <FieldLabel>Availability pill text</FieldLabel>
+                            <DarkInput
+                                icon={Globe}
+                                name="availabilityText"
+                                placeholder="e.g. Available for new projects"
+                                maxLength={80}
+                                value={form.availabilityText}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <FieldLabel>Projects shown on homepage</FieldLabel>

@@ -279,6 +279,11 @@
   flex-shrink: 0;
 }
 
+.contact-btn-primary {
+  width: 136px;
+  flex-shrink: 0;
+}
+
 /* Controls — uniform 44px height */
 .contact-row-action {
   display: inline-flex;
@@ -348,6 +353,7 @@
     flex: initial;
     gap: var(--space-sm);
     padding-block: 0;
+    max-inline-size: 100%;
   }
   .contact-banner__grid,
   .contact-workspace {
@@ -387,6 +393,62 @@
   .contact-banner__facts {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-sm);
+  }
+
+  .contact-workspace {
+    gap: var(--space-xl);
+  }
+
+  .contact-workspace__socials {
+    padding-block-start: var(--space-lg);
+  }
+
+  .contact-section--closing {
+    padding-block: var(--space-lg);
+  }
+
+  .contact-section--closing .contact-container {
+    gap: var(--space-xl);
+  }
+
+  .contact-section__head {
+    margin-block-end: var(--space-md);
+  }
+
+  .contact-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+    padding-block: var(--space-md);
+  }
+
+  .contact-row__info {
+    width: 100%;
+    flex: initial;
+  }
+
+  .contact-row__actions {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .contact-btn-primary {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
+  .contact-row-action {
+    flex-shrink: 0;
+    min-inline-size: 96px;
+  }
+
+  .contact-social-stack {
+    max-inline-size: 100%;
+    width: 100%;
+    gap: var(--space-xs);
   }
 }
 

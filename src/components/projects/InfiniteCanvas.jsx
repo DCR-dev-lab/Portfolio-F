@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useMotionValue } from "framer-motion";
+import { RotateCcw } from "lucide-react";
 import { sanitizeImageUrl } from "../../utils/security";
+import ProjectPreviewCard, {
+    positionPreviewCard,
+    updatePreviewCardText,
+} from "./ProjectPreviewCard";
 
 // Hash function for pseudo-random spatial seeding
 function hash3(cx, cy, cz, salt) {
@@ -51,6 +56,12 @@ const InfiniteCanvas = ({
 }) => {
     const containerRef = useRef(null);
     const sceneRef = useRef(null);
+    const zoomGaugeRef = useRef(null);
+    const cardRef = useRef(null);
+    const typeRef = useRef(null);
+    const labelRef = useRef(null);
+    const descRef = useRef(null);
+    const hintRef = useRef(null);
 
     // Always call the latest callback without tearing the scene down
     const selectRef = useRef(onSelectProject);
@@ -364,6 +375,12 @@ const InfiniteCanvas = ({
             if (!settled || dirty) {
                 project();
                 dirty = false;
+                if (zoomGaugeRef.current) {
+                    const label = `${Math.pow(2, logZoom.get()).toFixed(1)}×`;
+                    if (zoomGaugeRef.current.textContent !== label) {
+                        zoomGaugeRef.current.textContent = label;
+                    }
+                }
             }
             raf = requestAnimationFrame(loop);
         };
@@ -420,9 +437,39 @@ const InfiniteCanvas = ({
         let lastT = 0;
         let pid = null;
         let captured = false;
+        const activePointers = new Map();
+        let prevPinchDist = null;
+        let hadPinch = false;
+        let hoverProject = null;
+        let lastHoverCheck = 0;
+
+        const hidePreview = () => {
+            hoverProject = null;
+            if (cardRef.current) cardRef.current.style.opacity = "0";
+        };
+
+        const getPinchDistance = () => {
+            const pts = Array.from(activePointers.values());
+            if (pts.length < 2) return 0;
+            return Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        };
 
         const onDown = (e) => {
             if (e.button !== 0 && e.pointerType === "mouse") return;
+            hidePreview();
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (activePointers.size === 2) {
+                // Switch seamlessly into 2-finger pinch-to-zoom
+                dragging = false;
+                captured = false;
+                pid = null;
+                hadPinch = true;
+                prevPinchDist = getPinchDistance();
+                return;
+            }
+
+            if (activePointers.size === 1) hadPinch = false;
             dragging = true;
             captured = false;
             pid = e.pointerId;
@@ -436,11 +483,46 @@ const InfiniteCanvas = ({
         };
 
         const onMove = (e) => {
+            if (activePointers.has(e.pointerId)) {
+                activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            }
+
+            if (activePointers.size === 2) {
+                const dist = getPinchDistance();
+                if (prevPinchDist !== null && dist > 0) {
+                    const delta = dist - prevPinchDist;
+                    velLogZoom.set(velLogZoom.get() + delta * 0.004 * safeDragSpeed);
+                }
+                prevPinchDist = dist;
+                return;
+            }
+
             const rect = el.getBoundingClientRect();
             const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
             driftTX.set(Math.max(-1, Math.min(1, nx)));
             driftTY.set(Math.max(-1, Math.min(1, ny)));
+
+            // Desktop hover preview using the shared ProjectPreviewCard
+            if (!dragging && e.pointerType !== "touch") {
+                const now = performance.now();
+                if (now - lastHoverCheck > 30) {
+                    lastHoverCheck = now;
+                    const hitEl = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-tile-key]");
+                    const idx = hitEl?.dataset?.projIndex;
+                    const proj = idx !== undefined ? safeProjects[Number(idx)] || null : null;
+                    if (proj !== hoverProject) {
+                        hoverProject = proj;
+                        if (proj) {
+                            updatePreviewCardText({ typeRef, labelRef, descRef, hintRef }, proj, "Click to open ↗");
+                        }
+                        if (cardRef.current) cardRef.current.style.opacity = proj ? "1" : "0";
+                    }
+                }
+                if (hoverProject && cardRef.current) {
+                    positionPreviewCard(cardRef.current, el, e.clientX, e.clientY, 1);
+                }
+            }
 
             if (!dragging || e.pointerId !== pid) return;
 
@@ -475,13 +557,20 @@ const InfiniteCanvas = ({
         };
 
         const onUp = (e) => {
+            activePointers.delete(e.pointerId);
+            if (activePointers.size < 2) prevPinchDist = null;
+            if (e.pointerType === "touch" && activePointers.size === 0) {
+                driftTX.set(0);
+                driftTY.set(0);
+            }
+
             if (!dragging || e.pointerId !== pid) return;
 
             const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
             const duration = e.timeStamp - startTime;
 
-            // Reliable click/tap detection
-            if (dist < 8 && duration < 600) {
+            // Reliable click/tap detection (skip if finishing a 2-finger pinch)
+            if (!hadPinch && dist < 8 && duration < 600) {
                 const target = document.elementFromPoint(e.clientX, e.clientY);
                 const tile = target?.closest("[data-tile-key]");
                 if (tile && tile.dataset.projIndex !== undefined) {
@@ -506,6 +595,7 @@ const InfiniteCanvas = ({
 
         const onWheel = (e) => {
             e.preventDefault();
+            hidePreview();
             let delta = e.deltaY;
             if (e.deltaMode === 1) delta *= 16;
             else if (e.deltaMode === 2) delta *= 400;
@@ -514,6 +604,7 @@ const InfiniteCanvas = ({
         };
 
         const onLeave = () => {
+            hidePreview();
             driftTX.set(0);
             driftTY.set(0);
         };
@@ -537,6 +628,15 @@ const InfiniteCanvas = ({
         };
     }, [safeDragSpeed, targetX, targetY, velX, velY, velLogZoom, logZoom, driftTX, driftTY, safeProjects]);
 
+    const recenter = useCallback(() => {
+        targetX.set(0);
+        targetY.set(0);
+        targetLogZoom.set(0);
+        velX.set(0);
+        velY.set(0);
+        velLogZoom.set(0);
+    }, [targetX, targetY, targetLogZoom, velX, velY, velLogZoom]);
+
     return (
         <div
             ref={containerRef}
@@ -558,14 +658,46 @@ const InfiniteCanvas = ({
                 className="absolute inset-0 pointer-events-auto z-0 [isolation:isolate]"
             />
 
+            {safeProjects.length === 0 && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm font-sans text-stone-400 z-10">
+                    No projects to display.
+                </div>
+            )}
+
+            {/* Shared floating hover preview card */}
+            <ProjectPreviewCard
+                cardRef={cardRef}
+                typeRef={typeRef}
+                labelRef={labelRef}
+                descRef={descRef}
+                hintRef={hintRef}
+            />
+
             {/* Bottom HUD Bar */}
-            <div className="absolute inset-x-0 bottom-0 px-6 py-4 bg-gradient-to-t from-obsidian via-obsidian/80 to-transparent flex items-center justify-between text-xs font-sans text-stone-400 pointer-events-none z-10">
-                <span className="inline-flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse motion-reduce:animate-none" />
-                    <span>Infinite spatial canvas</span>
+            <div className="absolute inset-x-0 bottom-0 px-3 sm:px-6 pt-5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:py-4 bg-gradient-to-t from-obsidian via-obsidian/80 to-transparent flex items-center justify-between gap-3 text-xs font-mono text-stone-400 pointer-events-none select-none z-10">
+                <div className="flex items-center gap-2 min-w-0">
+                    <button
+                        type="button"
+                        onClick={recenter}
+                        aria-label="Recenter infinite canvas"
+                        title="Recenter view"
+                        className="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-stone-900/90 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-cream text-[11px] font-mono transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 shrink-0"
+                    >
+                        <RotateCcw className="w-3 h-3 text-red-400" aria-hidden="true" />
+                        <span>Recenter</span>
+                    </button>
+                    <span
+                        ref={zoomGaugeRef}
+                        className="px-2.5 py-1 rounded-md bg-stone-900/80 border border-stone-800 text-stone-300 shadow-sm text-[10px] sm:text-[11px] tabular-nums"
+                    >
+                        1.0×
+                    </span>
+                </div>
+                <span className="sm:hidden text-[10px] text-stone-500 truncate">
+                    Drag · Pinch · Tap card
                 </span>
-                <span className="hidden sm:inline text-stone-500">
-                    Click and drag to pan / Scroll to zoom / Select card to view
+                <span className="hidden sm:inline text-[11px] text-stone-500">
+                    Drag to pan · Scroll to zoom · Click card to open
                 </span>
             </div>
         </div>

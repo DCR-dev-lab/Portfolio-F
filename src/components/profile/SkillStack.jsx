@@ -290,7 +290,7 @@ const DeckCard = ({ group, i, total, progress, perCategory, reduce }) => {
     >
       <article
         aria-label={group.name}
-        className="relative h-full w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0c0a09] p-5 sm:p-7 md:p-9 lg:p-10 transition-colors duration-300 hover:border-red-500/35"
+        className="relative h-full w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0c0a09] p-4 sm:p-7 md:p-9 lg:p-10 transition-colors duration-300 hover:border-red-500/35"
         style={{
           boxShadow:
             "0 -18px 45px -15px rgba(0,0,0,0.95), 0 24px 50px -10px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.06)",
@@ -315,31 +315,31 @@ const DeckCard = ({ group, i, total, progress, perCategory, reduce }) => {
         {/* Quiet Mono Deck Index Counter (01 / 05) */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-4 right-5 sm:top-6 sm:right-8 font-mono text-[11px] sm:text-xs tracking-widest text-stone-500/70 select-none z-20"
+          className="pointer-events-none absolute top-3.5 right-4 sm:top-6 sm:right-8 font-mono text-[11px] sm:text-xs tracking-widest text-stone-500/70 select-none z-20"
         >
           {String(i + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </span>
 
         {/* Content Layer (Harmonious 2-Column Grid on Desktop, Centered Flow on Mobile) */}
-        <div className="relative z-10 flex flex-col justify-center md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] h-full gap-5 sm:gap-6 md:gap-8 items-center">
+        <div className="relative z-10 flex flex-col justify-center md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] h-full gap-3 sm:gap-6 md:gap-8 items-center">
           {/* Left Column: Title and Subtitle (Pure Confident Editorial Typography) */}
-          <div className="flex flex-col justify-center gap-1.5 sm:gap-2.5 w-full md:w-auto text-left">
-            <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] text-[#faf8f5] break-words">
+          <div className="flex flex-col justify-center gap-1 sm:gap-2.5 w-full md:w-auto text-left">
+            <h3 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] text-[#faf8f5] break-words">
               {group.name}
             </h3>
             {subtitle && (
-              <p className="text-xs sm:text-[13px] font-mono text-stone-400/85 tracking-normal leading-relaxed">
+              <p className="text-[11px] sm:text-[13px] font-mono text-stone-400/85 tracking-normal leading-relaxed">
                 {subtitle}
               </p>
             )}
           </div>
 
           {/* Right Column: Skill Chips and Link (Balanced Flow with Inline Brand Icons) */}
-          <div className="flex flex-wrap items-center content-center gap-2 sm:gap-2.5 w-full">
+          <div className="flex flex-wrap items-center content-center gap-1.5 sm:gap-2.5 w-full">
             {shown.map((s) => (
               <span
                 key={s._id ?? s.name}
-                className="group/chip inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-stone-900/60 px-3 py-1.5 text-xs sm:text-[13px] font-medium text-stone-200 backdrop-blur-md transition-all duration-200 hover:border-red-500/40 hover:bg-red-500/[0.08] hover:text-white"
+                className="group/chip inline-flex items-center gap-1.5 sm:gap-2 rounded-xl border border-white/[0.08] bg-stone-900/60 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-[13px] font-medium text-stone-200 backdrop-blur-md transition-all duration-200 hover:border-red-500/40 hover:bg-red-500/[0.08] hover:text-white"
               >
                 <CategoryIcon
                   category={group.name}
@@ -354,7 +354,7 @@ const DeckCard = ({ group, i, total, progress, perCategory, reduce }) => {
               <button
                 type="button"
                 onClick={() => setExpanded((prev) => !prev)}
-                className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-950/30 px-3 py-1.5 text-xs sm:text-[13px] font-medium text-red-300 backdrop-blur-md transition-colors hover:border-red-500/60 hover:text-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-950/30 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-[13px] font-medium text-red-300 backdrop-blur-md transition-colors hover:border-red-500/60 hover:text-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               >
                 {expanded ? "Show less" : `+${more} more`}
               </button>
@@ -446,22 +446,24 @@ const SkillStack = ({ skills = [], perCategory = 8, maxCategories = 5 }) => {
   const total = groups.length;
   if (!total) return null;
 
-  // Total scroll travel height: ~85vh per transition + 100vh stage visibility
+  // Responsive scroll runway height: 65vh per step on mobile, 82vh on desktop
+  const isMobileScreen = typeof window !== "undefined" && window.innerWidth < 768;
+  const vhPerStep = isMobileScreen ? 65 : 82;
   const runwayHeight = reduce
     ? "auto"
-    : `${Math.max(1, total - 1) * 85 + 100}vh`;
+    : `${Math.max(1, total - 1) * vhPerStep + 100}vh`;
 
   return (
     <div ref={ref} className="relative w-full" style={{ height: runwayHeight }}>
-      {/* Pinned Stage: Stays centered in viewport during scroll */}
+      {/* Pinned Stage: Stays centered in viewport during scroll, cleared above mobile dock */}
       <div
         className={
           reduce
             ? "w-full"
-            : "sticky top-0 h-[100dvh] w-full flex flex-col items-center justify-center px-4 sm:px-6"
+            : "sticky top-0 h-[100dvh] w-full flex flex-col items-center justify-center pb-12 md:pb-0 px-4 sm:px-6"
         }
       >
-        <div className="relative w-full max-w-4xl h-[min(480px,68vh)] sm:h-[420px] md:h-[400px]">
+        <div className="relative w-full max-w-4xl h-[min(380px,58vh)] sm:h-[400px] md:h-[400px]">
           {groups.map((g, i) => (
             <DeckCard
               key={g.name}

@@ -33,6 +33,7 @@ const MagneticProjects = ({ projects = [] }) => {
     const loop = useRef(0);
     const closeTimer = useRef(0);
     const cardRectMap = useRef(new WeakMap());
+    const sliceBtnRefs = useRef([]);
 
     const narrow = W > 0 && W < NARROW;
     const L = computeLayout(W || 1000, Math.max(n, 1));
@@ -139,7 +140,8 @@ const MagneticProjects = ({ projects = [] }) => {
         run();
     };
 
-    const closeCard = useCallback(() => {
+    const closeCard = useCallback((restoreFocus = false) => {
+        const closingIdx = open;
         target.current = Array.from({ length: n }, () => 0);
         cur.current = Array.from({ length: n }, () => 0);
         setFactors(Array.from({ length: n }, () => 0));
@@ -147,14 +149,30 @@ const MagneticProjects = ({ projects = [] }) => {
         clearTimeout(closeTimer.current);
         closeTimer.current = setTimeout(() => setClosing(false), 520);
         setOpen(null);
+        if (restoreFocus && closingIdx !== null) {
+            requestAnimationFrame(() => sliceBtnRefs.current[closingIdx]?.focus());
+        }
+    }, [n, open]);
+
+    const handleSliceKeyDown = useCallback((e, i) => {
+        if (!n) return;
+        let next = -1;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (i + 1) % n;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (i - 1 + n) % n;
+        else if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = n - 1;
+        if (next >= 0) {
+            e.preventDefault();
+            sliceBtnRefs.current[next]?.focus();
+        }
     }, [n]);
 
     // Escape closes; clicking empty space (not a card) closes
     useEffect(() => {
         if (open === null) return;
-        const onKey = (e) => e.key === "Escape" && closeCard();
+        const onKey = (e) => e.key === "Escape" && closeCard(true);
         const onDown = (e) => {
-            if (!e.target.closest || !e.target.closest("[data-magnetic-card]")) closeCard();
+            if (!e.target.closest || !e.target.closest("[data-magnetic-card]")) closeCard(false);
         };
         window.addEventListener("keydown", onKey);
         document.addEventListener("pointerdown", onDown);
@@ -301,12 +319,14 @@ const MagneticProjects = ({ projects = [] }) => {
                                 {/* the whole slice is one real button while closed */}
                                 {!isOpen && (
                                     <button
+                                        ref={(el) => { sliceBtnRefs.current[i] = el; }}
                                         type="button"
                                         aria-expanded={false}
                                         aria-label={`Open ${p.title}`}
                                         onClick={() => setOpen(i)}
                                         onFocus={() => pull(i)}
                                         onBlur={relax}
+                                        onKeyDown={(e) => handleSliceKeyDown(e, i)}
                                         className="absolute inset-0 z-10 cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-red-500/70"
                                     />
                                 )}
@@ -330,7 +350,7 @@ const MagneticProjects = ({ projects = [] }) => {
                                     <button
                                         type="button"
                                         aria-label={`Close ${p.title}`}
-                                        onClick={closeCard}
+                                        onClick={() => closeCard(true)}
                                         className="absolute right-3.5 top-3.5 z-30 flex h-8 w-8 items-center justify-center rounded-full border border-stone-700 bg-stone-900/80 text-stone-300 transition hover:border-red-500/50 hover:text-white"
                                     >
                                         <X className="h-4 w-4" />

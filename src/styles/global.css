@@ -26,6 +26,12 @@
     scrollbar-width: thin;
   }
 
+  @media (max-width: 767px) {
+    html {
+      scroll-padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
   body {
     background-color: var(--color-obsidian);
     color: var(--color-cream);

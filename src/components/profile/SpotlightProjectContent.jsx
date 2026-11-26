@@ -1,7 +1,9 @@
-import { ExternalLink, Github } from "lucide-react";
+import { ExternalLink, Github, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { isSafeUrl, sanitizeHref } from "../../utils/security";
 
-export const hasValidUrl = (url) => isSafeUrl(url, { allowMailTel: false });
+export const hasValidUrl = (url) =>
+  isSafeUrl(url, { allowMailTel: false }) && url !== "#" && url !== "";
 
 /**
  * Reusable spotlight project details block:
@@ -52,36 +54,45 @@ export const SpotlightProjectContent = ({
         </div>
       )}
 
-      {(hasValidUrl(project.projectUrl) || hasValidUrl(project.githubUrl)) && (
-        <div className="mt-5 flex flex-wrap gap-2.5 sm:gap-3">
-          {hasValidUrl(project.projectUrl) && (
-            <a
-              href={sanitizeHref(project.projectUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              tabIndex={isOpen ? 0 : -1}
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-sm shadow-red-900/40 transition hover:bg-red-500 active:scale-95"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Live Demo
-            </a>
-          )}
-          {hasValidUrl(project.githubUrl) && (
-            <a
-              href={sanitizeHref(project.githubUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              tabIndex={isOpen ? 0 : -1}
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-stone-700 bg-stone-900/80 px-4 sm:px-5 py-2 text-xs font-medium text-stone-200 transition hover:border-red-500/50 hover:text-white"
-            >
-              <Github className="h-3.5 w-3.5" />
-              Source Code
-            </a>
-          )}
-        </div>
-      )}
+      <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:gap-3">
+        {hasValidUrl(project.projectUrl) && (
+          <a
+            href={sanitizeHref(project.projectUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            tabIndex={isOpen ? 0 : -1}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-4 sm:px-5 py-2 text-xs font-semibold text-white shadow-sm shadow-red-900/40 transition hover:bg-red-500 active:scale-95"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Live Demo
+          </a>
+        )}
+        {hasValidUrl(project.githubUrl) && (
+          <a
+            href={sanitizeHref(project.githubUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            tabIndex={isOpen ? 0 : -1}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 rounded-full border border-stone-700 bg-stone-900/80 px-4 sm:px-5 py-2 text-xs font-medium text-stone-200 transition hover:border-red-500/50 hover:text-white"
+          >
+            <Github className="h-3.5 w-3.5" />
+            Source Code
+          </a>
+        )}
+        {project._id && !hasValidUrl(project.projectUrl) && !hasValidUrl(project.githubUrl) && (
+          <Link
+            to={`/projects?project=${project._id}`}
+            tabIndex={isOpen ? 0 : -1}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-950/40 px-4 sm:px-5 py-2 text-xs font-medium text-red-300 transition hover:border-red-500 hover:text-white active:scale-95"
+          >
+            <span>View Architecture</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
+      </div>
     </>
   );
 };

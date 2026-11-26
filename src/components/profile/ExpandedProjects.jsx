@@ -12,6 +12,15 @@ const ExpandedProjects = ({ projects = [] }) => {
     const [active, setActive] = useState(0);
     if (!projects.length) return null;
 
+    const handleSelect = (i, el) => {
+        setActive(i);
+        if (typeof window !== "undefined" && window.innerWidth < 1024 && el) {
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }, 60);
+        }
+    };
+
     return (
         <div data-no-shatter className="flex flex-col gap-3 lg:h-[540px] lg:flex-row">
             {projects.map((p, i) => {
@@ -23,22 +32,26 @@ const ExpandedProjects = ({ projects = [] }) => {
                         key={p._id ?? i}
                         data-active={on}
                         tabIndex={0}
-                        onMouseEnter={() => setActive(i)}
+                        onMouseEnter={() => {
+                            if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+                                setActive(i);
+                            }
+                        }}
                         onFocus={() => setActive(i)}
-                        onClick={() => setActive(i)}
+                        onClick={(e) => handleSelect(i, e.currentTarget)}
                         onKeyDown={(e) => {
                             // only when the card itself is focused, so Enter on the links inside still opens them
                             if (e.target !== e.currentTarget) return;
                             if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
-                                setActive(i);
+                                handleSelect(i, e.currentTarget);
                             }
                         }}
                         aria-label={p.title}
                         className={`group relative cursor-pointer overflow-hidden rounded-2xl border bg-stone-950 outline-none transition-[flex-grow,height,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none focus-visible:border-red-500/60 lg:min-w-0 lg:basis-0 ${
                             on
-                                ? "h-[420px] border-red-500/30 lg:h-auto lg:grow-[3.2]"
-                                : "h-[92px] border-stone-800 hover:border-stone-700 lg:h-auto lg:grow"
+                                ? "h-[390px] sm:h-[420px] border-red-500/30 lg:h-auto lg:grow-[3.2]"
+                                : "h-[82px] sm:h-[92px] border-stone-800 hover:border-stone-700 lg:h-auto lg:grow"
                         }`}
                     >
                         {/* image */}
@@ -54,7 +67,7 @@ const ExpandedProjects = ({ projects = [] }) => {
                         ) : (
                             <div className="absolute inset-0 bg-gradient-to-br from-stone-800 to-stone-950" />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a09] via-[#0c0a09]/55 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a09] via-[#0c0a09]/75 to-[#0c0a09]/30" />
                         <div
                             className={`pointer-events-none absolute inset-0 transition-opacity duration-700 ${on ? "opacity-100" : "opacity-0"}`}
                             style={{ background: "radial-gradient(ellipse at 50% 120%, rgba(220,38,38,0.22), transparent 65%)" }}

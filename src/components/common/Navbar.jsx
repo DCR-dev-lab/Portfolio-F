@@ -1,21 +1,21 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Briefcase, Mail, Terminal } from "lucide-react";
+import { Home, Briefcase, Mail, Terminal } from "lucide-react";
 
 const Navbar = () => {
-    const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
     const activePage = location.pathname;
     const [isVisible, setIsVisible] = useState(true);
     const lastScrollYRef = useRef(0);
 
-    // Intro entrance delay on Home landing: gently float down in lockstep with the primary CTAs
+    // Intro entrance delay on Home landing: gently float in lockstep with the primary CTAs
     const isHome = location.pathname === "/";
-    const [isIntroHeld, setIsIntroHeld] = useState(isHome);
-    const [introDone, setIntroDone] = useState(!isHome);
+    const isFirstVisitHome = isHome && (typeof window !== "undefined" && !sessionStorage.getItem("dcr_visited_home"));
+    const [isIntroHeld, setIsIntroHeld] = useState(() => isFirstVisitHome);
+    const [introDone, setIntroDone] = useState(() => !isFirstVisitHome);
 
     useEffect(() => {
-        if (!isHome) {
+        if (!isHome || !isFirstVisitHome) {
             setIsIntroHeld(false);
             setIntroDone(true);
             return;
@@ -52,14 +52,9 @@ const Navbar = () => {
                 setIsVisible(true);
                 lastScrollYRef.current = currentScrollY;
             } else if (Math.abs(diff) > 10) {
-                if (diff > 0) {
-                    // Scrolling DOWN: smoothly slide navbar up and out of view
-                    setIsVisible(false);
-                    setIsOpen(false);
-                } else {
-                    // Scrolling UP: smoothly slide navbar down into view
-                    setIsVisible(true);
-                }
+                // Desktop top bar hides on scroll down and reveals on scroll up;
+                // mobile bottom docked bar remains persistently visible via responsive classes.
+                setIsVisible(diff <= 0);
                 lastScrollYRef.current = currentScrollY;
             }
         };
@@ -71,50 +66,41 @@ const Navbar = () => {
         };
     }, [isIntroHeld]);
 
-    // Close mobile menu on Escape key
-    useEffect(() => {
-        if (!isOpen) return;
-        const handleKeyDown = (e) => {
-            if (e.key === "Escape") setIsOpen(false);
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen]);
-
     const navLinks = [
         { path: "/", label: "Home", icon: Home },
         { path: "/projects", label: "Projects", icon: Briefcase },
         { path: "/contact", label: "Contact", icon: Mail }
     ];
 
-    // During intro, match the CTA's soft duration-1000 float (translating 24px and fading in)
-    // During scroll, use a silky 500ms cubic-bezier slide that physically glides off screen without opacity flickering
+    // During intro, match the CTA's soft duration-1000 float (sliding up on mobile, down on desktop)
+    // After intro, desktop glides off-screen on scroll down while mobile stays docked at the bottom
     const transitionClass = !introDone
-        ? "transition-all duration-1000 ease-out"
-        : "transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]";
+        ? "transition-all duration-1000 ease-out motion-reduce:transition-none"
+        : "md:transition-transform md:duration-500 md:ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none";
 
     const visibilityClass = !introDone
         ? isIntroHeld
-            ? "opacity-0 -translate-y-6 pointer-events-none"
+            ? "opacity-0 translate-y-6 md:-translate-y-6 pointer-events-none"
             : "opacity-100 translate-y-0"
         : isVisible
             ? "translate-y-0 opacity-100"
-            : "-translate-y-full opacity-100 pointer-events-none";
+            : "translate-y-0 md:-translate-y-full opacity-100 md:pointer-events-none";
 
     return (
         <nav
-            className={`fixed top-0 left-0 right-0 z-50 bg-[#0c0a09]/80 backdrop-blur-xl border-b border-stone-800/80 ${transitionClass} ${visibilityClass}`}
+            aria-label="Primary"
+            className={`fixed bottom-0 left-0 right-0 md:top-0 md:bottom-auto z-50 bg-[#0c0a09]/90 md:bg-[#0c0a09]/80 backdrop-blur-xl border-t md:border-t-0 md:border-b border-stone-800/80 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))] pt-1 pl-[max(0.5rem,env(safe-area-inset-left,0px))] pr-[max(0.5rem,env(safe-area-inset-right,0px))] md:p-0 ${transitionClass} ${visibilityClass}`}
         >
-            <div className="max-w-7xl mx-auto px-6 py-3.5">
-                <div className="flex justify-between items-center">
+            <div className="max-w-7xl mx-auto md:px-6 md:py-3.5">
+                <div className="flex justify-center md:justify-between items-center">
 
-                    {/* Logo with Rich Red Dot & Terminal Glyph */}
+                    {/* Desktop Logo with Rich Red Dot & Terminal Glyph */}
                     <Link
                         to="/"
-                        className="group flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/70"
+                        className="hidden md:flex group items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/70"
                     >
                         <div className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-stone-900 border border-stone-800 text-red-500 transition-all duration-200 group-hover:border-red-500/50 group-hover:bg-red-500/10 shadow-sm">
-                            <Terminal className="w-4 h-4 text-red-500 group-hover:text-red-400 transition-colors" />
+                            <Terminal aria-hidden="true" className="w-4 h-4 text-red-500 group-hover:text-red-400 transition-colors" />
                         </div>
                         <div className="flex flex-col">
                             <span className="text-base font-bold tracking-tight text-[#faf8f5] group-hover:text-white transition-colors">
@@ -126,66 +112,33 @@ const Navbar = () => {
                         </div>
                     </Link>
 
-                    {/* Desktop Nav */}
-                    <div className="hidden md:flex items-center gap-1 bg-stone-900/60 p-1 rounded-full border border-stone-800/80 backdrop-blur-md">
+                    {/* Unified Responsive Nav Links: 3-column docked bar on mobile, floating pill on desktop */}
+                    <ul className="grid grid-cols-3 w-full gap-1 md:w-auto md:flex md:items-center md:gap-1 md:bg-stone-900/60 md:p-1 md:rounded-full md:border md:border-stone-800/80 md:backdrop-blur-md">
                         {navLinks.map((link) => {
                             const isActive = activePage === link.path;
 
                             return (
-                                <Link
-                                    key={link.path}
-                                    to={link.path}
-                                    className={`relative px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-2 ${
-                                        isActive
-                                            ? "bg-red-500/[0.08] text-red-200 font-semibold border border-red-500/30 shadow-sm shadow-red-950/30"
-                                            : "text-stone-400 hover:text-[#faf8f5] hover:bg-stone-800/40"
-                                    }`}
-                                >
-                                    <link.icon className={`w-3.5 h-3.5 ${isActive ? "text-red-500" : "text-stone-400"}`} />
-                                    <span>{link.label}</span>
-                                </Link>
+                                <li key={link.path} className="flex">
+                                    <Link
+                                        to={link.path}
+                                        aria-current={isActive ? "page" : undefined}
+                                        className={`relative w-full min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 px-2 py-1 md:px-4 md:py-1.5 rounded-lg md:rounded-full text-[10px] md:text-xs font-medium transition-all duration-200 flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/70 ${
+                                            isActive
+                                                ? "bg-red-500/[0.1] md:bg-red-500/[0.08] text-red-200 font-semibold border border-red-500/35 md:border-red-500/30 shadow-sm shadow-red-950/30"
+                                                : "text-stone-400 hover:text-[#faf8f5] hover:bg-stone-800/40 border border-transparent"
+                                        }`}
+                                    >
+                                        <link.icon
+                                            aria-hidden="true"
+                                            className={`w-3.5 h-3.5 ${isActive ? "text-red-500" : "text-stone-400"}`}
+                                        />
+                                        <span>{link.label}</span>
+                                    </Link>
+                                </li>
                             );
                         })}
-                    </div>
-
-                    {/* Mobile Button */}
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        aria-label="Toggle navigation menu"
-                        className="md:hidden w-9 h-9 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-300 hover:text-white hover:bg-stone-800 transition-all"
-                    >
-                        {isOpen ? (
-                            <X className="w-5 h-5 text-white" />
-                        ) : (
-                            <Menu className="w-5 h-5 text-white" />
-                        )}
-                    </button>
+                    </ul>
                 </div>
-
-                {/* Mobile Nav */}
-                {isOpen && (
-                    <div className="md:hidden mt-3 pb-3 space-y-1.5 border-t border-stone-800/80 pt-3 transition-opacity duration-200">
-                        {navLinks.map((link) => {
-                            const isActive = activePage === link.path;
-
-                            return (
-                                <Link
-                                    key={link.path}
-                                    to={link.path}
-                                    onClick={() => setIsOpen(false)}
-                                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                                        isActive
-                                            ? "bg-red-500/[0.08] text-red-200 font-semibold border border-red-500/30"
-                                            : "text-stone-300 hover:bg-stone-900 hover:text-white"
-                                    }`}
-                                >
-                                    <link.icon className={`w-4 h-4 ${isActive ? "text-red-500" : "text-stone-400"}`} />
-                                    <span>{link.label}</span>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                )}
             </div>
         </nav>
     );

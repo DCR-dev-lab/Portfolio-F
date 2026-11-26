@@ -205,7 +205,7 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
                     {/* Content: flexible top spacer anchors short content to bottom while allowing natural top-to-bottom scrolling for long content */}
                     <div
                         data-lenis-prevent="true"
-                        className="relative z-10 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-8 md:px-12 pb-12"
+                        className="relative z-10 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-8 md:px-12 pb-[max(3rem,env(safe-area-inset-bottom))]"
                     >
                         <motion.div
                             key={projectId}
@@ -313,6 +313,12 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
                                             </a>
                                         )}
                                     </div>
+                                )}
+
+                                {canNavigate && (
+                                    <p className="mt-5 text-[11px] font-mono text-stone-500 sm:hidden">
+                                        Swipe left or right to switch projects
+                                    </p>
                                 )}
                             </div>
                         </motion.div>

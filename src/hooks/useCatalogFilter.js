@@ -11,12 +11,14 @@ const useCatalogFilter = ({
     errorMessage = "Failed to load items.",
     getCategory = defaultGetCategory,
     matchesSearch = () => true,
+    initialSearch = "",
+    initialCategory = "All",
 }) => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All");
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
+    const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
     const fetcherRef = useRef(fetcher);
     fetcherRef.current = fetcher;

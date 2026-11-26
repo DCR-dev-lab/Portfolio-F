@@ -12,8 +12,9 @@ import { isSafeUrl, sanitizeHref } from "../../utils/security";
  * The 3D particle text and ambient dust are handled seamlessly by the
  * shared GlobalParticleCanvas behind the page, aligning with boxRef.
  */
-const Hero = ({ profile, onScrollToNext }) => {
-  const [isVisible, setIsVisible] = useState(false);
+const Hero = ({ profile, onScrollToNext, isReturnVisit = false }) => {
+  const hasVisited = isReturnVisit || (typeof window !== "undefined" && sessionStorage.getItem("dcr_visited_home") === "true");
+  const [isVisible, setIsVisible] = useState(() => hasVisited);
 
   const heroProfile = {
     fullName: "Denny Charles Raj",
@@ -24,6 +25,10 @@ const Hero = ({ profile, onScrollToNext }) => {
     ...profile,
   };
   const { fullName, title, shortIntro, resumeUrl, socialLinks } = heroProfile;
+  const statusAvailable = heroProfile.isAvailable ?? true;
+  const statusText =
+    (heroProfile.availabilityText || "").trim() ||
+    (statusAvailable ? "Available for new projects" : "Currently unavailable");
 
   const rawName = (fullName || "Denny Charles Raj").trim();
   const cleanFullName = rawName.endsWith(".")
@@ -40,9 +45,11 @@ const Hero = ({ profile, onScrollToNext }) => {
   })();
 
   useEffect(() => {
-    const t = setTimeout(() => setIsVisible(true), 50);
-    return () => clearTimeout(t);
-  }, []);
+    if (!isVisible) {
+      const t = setTimeout(() => setIsVisible(true), 50);
+      return () => clearTimeout(t);
+    }
+  }, [isVisible]);
 
   const handleScrollClick = () => {
     if (onScrollToNext) {
@@ -60,20 +67,22 @@ const Hero = ({ profile, onScrollToNext }) => {
   };
 
   const reveal = (delay) =>
-    `transition-all duration-1000 ${delay} ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`;
+    hasVisited
+      ? `transition-all duration-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`
+      : `transition-all duration-1000 ${delay} ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`;
 
   const btnBase =
     "w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-medium text-sm transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950";
 
   return (
-    <section className="relative min-h-[100dvh] overflow-hidden bg-transparent text-[#faf8f5] flex flex-col">
-      <div className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-6 pt-24 pb-6 flex flex-col items-center justify-center text-center pointer-events-none">
+    <section id="hero" data-section="hero" className="relative min-h-[100dvh] overflow-hidden bg-transparent text-[#faf8f5] flex flex-col">
+      <div className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-6 pt-12 sm:pt-20 md:pt-24 pb-4 sm:pb-6 flex flex-col items-center justify-center text-center pointer-events-none">
         <div
-          className={`inline-flex items-center gap-2 px-3.5 py-1 mb-4 rounded-full bg-stone-900/70 border border-stone-800 backdrop-blur-md ${reveal("delay-[800ms]")}`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1 mb-3 sm:mb-4 rounded-full bg-stone-900/70 border border-stone-800 backdrop-blur-md ${reveal("delay-[800ms]")}`}
         >
-          <PulseDot />
+          <PulseDot active={statusAvailable} />
           <span className="text-xs font-mono tracking-wide text-stone-300">
-            Available for new projects
+            {statusText}
           </span>
         </div>
 
@@ -82,26 +91,26 @@ const Hero = ({ profile, onScrollToNext }) => {
           as="h1"
           text={cleanFullName}
           splitOnMobile
-          intro
+          intro={!hasVisited}
           cap={6500}
           capMobile={3200}
-          className="w-[min(92vw,1240px)] h-[88vw] max-h-[380px] md:h-[10vw] md:max-h-[140px]"
+          className="w-full max-w-[1240px] h-[58vw] max-h-[220px] sm:h-[45vw] sm:max-h-[260px] md:h-[10vw] md:max-h-[140px]"
         />
 
         <h2
-          className={`mt-4 text-lg sm:text-2xl font-medium text-red-300/90 tracking-tight ${reveal("delay-[1000ms]")}`}
+          className={`mt-3 sm:mt-4 text-base sm:text-2xl font-medium text-red-300/90 tracking-tight ${reveal("delay-[1000ms]")}`}
         >
           {displayTitle}
         </h2>
 
         <p
-          className={`mt-3 text-sm sm:text-base text-stone-400 max-w-xl leading-relaxed ${reveal("delay-[1200ms]")}`}
+          className={`mt-2 sm:mt-3 text-xs sm:text-base text-stone-400 max-w-xl leading-relaxed ${reveal("delay-[1200ms]")}`}
         >
           {shortIntro}
         </p>
 
         <div
-          className={`flex flex-col sm:flex-row items-center gap-3 pt-7 w-full sm:w-auto pointer-events-auto ${reveal("delay-[1400ms]")}`}
+          className={`flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 pt-5 sm:pt-7 w-full sm:w-auto pointer-events-auto ${reveal("delay-[1400ms]")}`}
         >
           <Link
             to="/projects"
@@ -134,12 +143,12 @@ const Hero = ({ profile, onScrollToNext }) => {
           )}
         </div>
 
-        <div className={`pt-6 pointer-events-auto ${reveal("delay-[1600ms]")}`}>
+        <div className={`pt-4 sm:pt-6 pointer-events-auto ${reveal("delay-[1600ms]")}`}>
           <SocialLinks socialLinks={socialLinks} variant="circles" />
         </div>
       </div>
 
-      <div className={`relative z-10 pb-4 flex flex-col items-center gap-2 ${reveal("delay-[1900ms]")}`}>
+      <div className={`relative z-10 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-4 flex flex-col items-center gap-1.5 ${reveal("delay-[1900ms]")}`}>
         <span aria-hidden="true" className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-600">
           <span className="sm:hidden">Tap to shatter</span>
           <span className="hidden sm:inline">

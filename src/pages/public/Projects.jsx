@@ -135,7 +135,49 @@ const Projects = () => {
         errorMessage: "Failed to load projects.",
         getCategory: getProjectCategory,
         matchesSearch: matchesProjectSearch,
+        initialSearch: searchParams.get("q") || "",
+        initialCategory: searchParams.get("category") || "All",
     });
+
+    const handleSearchChange = useCallback(
+        (value) => {
+            setSearchQuery(value);
+            updateParams(
+                (p) => {
+                    if (value.trim()) p.set("q", value);
+                    else p.delete("q");
+                },
+                { replace: true }
+            );
+        },
+        [setSearchQuery, updateParams]
+    );
+
+    const handleCategoryChange = useCallback(
+        (category) => {
+            setSelectedCategory(category);
+            updateParams(
+                (p) => {
+                    if (category && category !== "All") p.set("category", category);
+                    else p.delete("category");
+                },
+                { replace: true }
+            );
+        },
+        [setSelectedCategory, updateParams]
+    );
+
+    const resetFilters = useCallback(() => {
+        setSearchQuery("");
+        setSelectedCategory("All");
+        updateParams(
+            (p) => {
+                p.delete("q");
+                p.delete("category");
+            },
+            { replace: true }
+        );
+    }, [setSearchQuery, setSelectedCategory, updateParams]);
 
     const [loaderGone, setLoaderGone] = useState(false);
 
@@ -203,8 +245,10 @@ const Projects = () => {
     // Switcher reused in the 3D HUD and the grid header
     const renderSwitcher = (compact = false) => (
         <div
-            className={`inline-flex items-center p-1.5 rounded-full bg-stone-900/95 border border-stone-800 shadow-md gap-1 ${
-                compact ? "max-w-[calc(100vw-32px)] overflow-x-auto scrollbar-none" : "flex-wrap"
+            className={`items-center p-1 sm:p-1.5 rounded-full bg-stone-900/95 border border-stone-800 shadow-md gap-1 ${
+                compact
+                    ? "inline-flex max-w-[calc(100vw-6.5rem)] sm:max-w-[calc(100vw-32px)] overflow-x-auto scrollbar-none"
+                    : "grid grid-cols-3 sm:inline-flex w-full sm:w-auto"
             }`}
         >
             {VIEW_MODES.map((mode) => {
@@ -216,7 +260,7 @@ const Projects = () => {
                         type="button"
                         onClick={() => setActiveViewMode(mode.id)}
                         aria-pressed={isActive}
-                        className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-sans font-medium transition-colors duration-200 whitespace-nowrap cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 ${
+                        className={`inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2 rounded-full text-xs font-sans font-medium transition-colors duration-200 whitespace-nowrap cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 ${
                             isActive
                                 ? "bg-red-600 text-white font-semibold shadow-md shadow-red-950/60"
                                 : "text-stone-400 hover:text-cream hover:bg-stone-800/60"
@@ -240,7 +284,7 @@ const Projects = () => {
                     <motion.div
                         key="immersive"
                         {...fadeProps}
-                        className="fixed inset-0 z-30 w-screen h-screen overflow-hidden bg-obsidian select-none"
+                        className="fixed inset-0 z-30 w-screen h-screen h-[100dvh] overflow-hidden bg-obsidian select-none"
                     >
                         {/* Only the scene crossfades when switching Tunnel <-> Canvas; the HUD stays put */}
                         <div className="absolute inset-0 w-full h-full">
@@ -267,10 +311,17 @@ const Projects = () => {
                             </AnimatePresence>
                         </div>
 
-                        <header className="pointer-events-none absolute inset-x-0 top-0 p-4 sm:p-6 flex items-center justify-between z-[100]">
+                        <header className="pointer-events-none absolute inset-x-0 top-0 p-3 sm:p-6 flex items-center justify-between gap-2 z-[100]">
+                            <button
+                                type="button"
+                                onClick={() => setActiveViewMode("grid")}
+                                className="sr-only focus:not-sr-only pointer-events-auto px-3.5 py-2 rounded-full bg-red-600 text-white text-xs font-sans font-semibold shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                            >
+                                Switch to Grid Archive for keyboard browsing
+                            </button>
                             <Link
                                 to="/"
-                                className="pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-cream text-xs font-sans font-medium transition-colors duration-200 shadow-md hover:scale-105 active:scale-95 motion-reduce:transform-none motion-reduce:transition-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+                                className="pointer-events-auto shrink-0 inline-flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-cream text-xs font-sans font-medium transition-colors duration-200 shadow-md hover:scale-105 active:scale-95 motion-reduce:transform-none motion-reduce:transition-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
                                 title="Return to Home"
                             >
                                 <ArrowLeft className="w-3.5 h-3.5 text-red-400" aria-hidden="true" />
@@ -291,7 +342,7 @@ const Projects = () => {
                     <motion.div
                         key="archive"
                         {...fadeProps}
-                        className="relative pt-24 pb-24 px-4 sm:px-6 md:px-8 bg-transparent"
+                        className="relative pt-8 md:pt-24 pb-24 px-4 sm:px-6 md:px-8 bg-transparent"
                     >
                         {/* Volumetric laser curtain at the top, matching Home */}
                         <div
@@ -303,8 +354,8 @@ const Projects = () => {
                         </div>
 
                         <div className="max-w-7xl mx-auto">
-                            {/* Utility row: archive pill left, view switcher right */}
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                            {/* Utility row: archive pill left, full-width segmented switcher on mobile / right-aligned on desktop */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-8">
                                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900/80 border border-stone-800 text-stone-300">
                                     <Briefcase aria-hidden="true" className="w-3.5 h-3.5 text-red-400" />
                                     <span className="text-xs font-sans font-medium text-stone-300">
@@ -312,47 +363,47 @@ const Projects = () => {
                                     </span>
                                 </div>
 
-                                <div className="self-end sm:self-auto">{renderSwitcher(false)}</div>
+                                <div className="w-full sm:w-auto">{renderSwitcher(false)}</div>
                             </div>
 
                             {/* Heading */}
-                            <div className="mb-10 sm:mb-12">
+                            <div className="mb-6 sm:mb-12">
                                 <ParticleHeading
                                     id="projects-archive-heading"
                                     text="Projects"
                                     align="left"
-                                    className="w-[min(92vw,480px)] h-[60px] sm:h-[75px] md:h-[85px]"
+                                    className="w-[min(92vw,480px)] h-[56px] sm:h-[75px] md:h-[85px]"
                                 />
-                                <p className="text-stone-400 text-sm sm:text-base max-w-2xl mt-2 leading-relaxed">
+                                <p className="text-stone-400 text-sm sm:text-base max-w-2xl mt-1.5 sm:mt-2 leading-relaxed">
                                     A curated index of production applications, architectural prototypes, and full-stack systems.
                                 </p>
                             </div>
 
                             {/* Search and filters */}
-                            <div className="space-y-6 mb-8 pt-4 border-t border-stone-800/60">
-                                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                            <div className="space-y-3.5 sm:space-y-6 mb-6 sm:mb-8 pt-4 border-t border-stone-800/60">
+                                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 sm:gap-4">
                                     <div className="w-full md:max-w-md">
                                         <SearchBar
                                             value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onChange={(e) => handleSearchChange(e.target.value)}
                                             placeholder="Search by name, tech stack, or keywords..."
                                         />
                                     </div>
 
-                                    <div className="text-xs font-sans text-stone-400 self-end md:self-auto">
+                                    <div className="text-xs font-sans text-stone-400 self-start md:self-auto">
                                         Showing <strong className="text-red-400 font-mono font-medium">{filteredProjects.length}</strong> of <span className="font-mono">{projects.length}</span> project{projects.length !== 1 ? "s" : ""}
                                     </div>
                                 </div>
 
                                 {categories.length > 1 && (
-                                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                                    <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-2 scrollbar-none">
                                         {categories.map((category) => {
                                             const isSelected = selectedCategory === category;
                                             return (
                                                 <button
                                                     key={category}
                                                     type="button"
-                                                    onClick={() => setSelectedCategory(category)}
+                                                    onClick={() => handleCategoryChange(category)}
                                                     aria-pressed={isSelected}
                                                     className={`px-4 py-1.5 rounded-full text-xs font-sans font-medium transition-colors duration-200 whitespace-nowrap cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 ${
                                                         isSelected
@@ -374,6 +425,17 @@ const Projects = () => {
                                     icon={Code2}
                                     title="No Projects Found"
                                     description="Try adjusting your search criteria or clearing selected filters."
+                                    action={
+                                        (searchQuery || selectedCategory !== "All") && (
+                                            <button
+                                                type="button"
+                                                onClick={resetFilters}
+                                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs font-sans font-semibold shadow-md shadow-red-950/50 transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                            >
+                                                Reset filters
+                                            </button>
+                                        )
+                                    }
                                     className="my-10"
                                 />
                             ) : (

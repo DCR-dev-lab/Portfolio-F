@@ -36,12 +36,13 @@ const CursorFX = ({
 }) => {
   const canvasRef = useRef(null);
 
-  // Dynamically react if pointer or motion settings change in OS
+  // Dynamically react if pointer or motion settings change in OS (never on touch / mobile)
   const [active, setActive] = useState(() => {
     if (typeof window === "undefined") return false;
     const fine =
       window.matchMedia("(pointer: fine)").matches &&
-      window.matchMedia("(hover: hover)").matches;
+      window.matchMedia("(hover: hover)").matches &&
+      !window.matchMedia("(pointer: coarse)").matches;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -51,18 +52,21 @@ const CursorFX = ({
   useEffect(() => {
     const fineMql = window.matchMedia("(pointer: fine)");
     const hoverMql = window.matchMedia("(hover: hover)");
+    const coarseMql = window.matchMedia("(pointer: coarse)");
     const motionMql = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const check = () => {
-      setActive(fineMql.matches && hoverMql.matches && !motionMql.matches);
+      setActive(fineMql.matches && hoverMql.matches && !coarseMql.matches && !motionMql.matches);
     };
 
     fineMql.addEventListener?.("change", check);
     hoverMql.addEventListener?.("change", check);
+    coarseMql.addEventListener?.("change", check);
     motionMql.addEventListener?.("change", check);
     return () => {
       fineMql.removeEventListener?.("change", check);
       hoverMql.removeEventListener?.("change", check);
+      coarseMql.removeEventListener?.("change", check);
       motionMql.removeEventListener?.("change", check);
     };
   }, []);
@@ -639,9 +643,17 @@ const CursorFX = ({
       raf = requestAnimationFrame(frame);
     }
 
+    const onTouchStart = () => {
+      visible = false;
+      mouse.seen = false;
+      setNativeHidden(false);
+      setActive(false);
+    };
+
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerdown", onDown, { passive: true });
     window.addEventListener("pointerup", onUp, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("click", onClick, { passive: true });
     window.addEventListener("resize", onResize, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -658,6 +670,7 @@ const CursorFX = ({
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("click", onClick);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
@@ -666,7 +679,7 @@ const CursorFX = ({
     };
   }, [active, mode, hideNative, trail]);
 
-  if (typeof document === "undefined" || !document.body) return null;
+  if (!active || typeof document === "undefined" || !document.body) return null;
 
   return createPortal(
     <canvas

@@ -1,6 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { useReducedMotion } from "framer-motion";
+import { Pause, Play } from "lucide-react";
 import { sanitizeImageUrl } from "../../utils/security";
+import ProjectPreviewCard, {
+    applyPreviewCardTransform,
+    positionPreviewCard,
+    updatePreviewCardText,
+} from "./ProjectPreviewCard";
 
 const TUNNEL_WIDTH = 2.2;
 const TUNNEL_HEIGHT = 1.9;
@@ -28,8 +35,8 @@ const COLOR_CRUISE = new THREE.Color("#dc2626");
 const COLOR_ACCEL = new THREE.Color("#ef4444");
 const COLOR_LIGHTSPEED = new THREE.Color("#fca5a5");
 
-// Base classes for the status label; every state keeps these so it stays hidden on phones
-const STATUS_BASE = "hidden sm:inline text-[11px] tracking-wider";
+// Base classes for the status label; compact on mobile so telemetry remains readable
+const STATUS_BASE = "text-[10px] sm:text-[11px] tracking-wider whitespace-nowrap";
 
 // Space/arrow keys must never be hijacked from buttons, links or form fields
 const INTERACTIVE_SELECTOR =
@@ -91,7 +98,19 @@ const TunnelGallery = ({
     const depthGaugeRef = useRef(null);
     const statusGaugeRef = useRef(null);
     const vignetteRef = useRef(null);
+    const reduceMotion = useReducedMotion();
+    const reduceMotionRef = useRef(Boolean(reduceMotion));
+    reduceMotionRef.current = Boolean(reduceMotion);
     const [failed, setFailed] = useState(false);
+    const [isUserPaused, setIsUserPaused] = useState(() => Boolean(reduceMotion));
+    const userPausedRef = useRef(Boolean(reduceMotion));
+
+    const toggleUserPause = useCallback(() => {
+        const next = !userPausedRef.current;
+        userPausedRef.current = next;
+        setIsUserPaused(next);
+        if (next) pressedRef.current = false;
+    }, []);
 
     // Extract image URLs and project mapping
     const validProjects = useMemo(() => {
@@ -555,29 +574,33 @@ const TunnelGallery = ({
             last = now;
 
             const curBase = baseSpeedRef.current;
-            const isBoosting = pressedRef.current;
+            const isUserPausedNow = userPausedRef.current;
+            const isBoosting = !isUserPausedNow && pressedRef.current;
 
             if (slowMoGrace > 0) {
                 slowMoGrace = Math.max(0, slowMoGrace - dt);
             }
-            const isSlowMo = !isBoosting && (slowMoGrace > 0 || manualBrake);
+            const isSlowMo = !isUserPausedNow && !isBoosting && (slowMoGrace > 0 || manualBrake);
 
             // Progressive Hyperspace throttle ramp (0 -> 1 over ~3.4s hold, smooth inertial coast over ~3.2s)
             if (isBoosting) {
                 warpLevel = Math.min(1, warpLevel + dt / 3.4);
             } else {
-                const bleedRate = isSlowMo ? dt * 3.0 : dt / 3.2;
+                const bleedRate = isUserPausedNow || isSlowMo ? dt * 3.0 : dt / 3.2;
                 warpLevel = Math.max(0, warpLevel - bleedRate);
             }
 
-            // Target speed with direct damping (no queued chase lag blocking slow-mo!)
+            // Target speed with direct damping (no queued chase lag blocking slow-mo or pause!)
             const warpEase = warpLevel * warpLevel * (3 - 2 * warpLevel); // smoothstep
-            const targetSpeed = isSlowMo
-                ? curBase * SLOWMO_FACTOR
-                : curBase + warpEase * (maxVisualSpeed - curBase);
+            const targetSpeed = isUserPausedNow
+                ? 0
+                : isSlowMo
+                    ? curBase * SLOWMO_FACTOR
+                    : curBase + warpEase * (maxVisualSpeed - curBase);
 
-            const accelResponse = isSlowMo ? 12 : isBoosting ? 5.5 : 2.4;
+            const accelResponse = isUserPausedNow || isSlowMo ? 12 : isBoosting ? 5.5 : 2.4;
             visualSpeed += (targetSpeed - visualSpeed) * Math.min(1, dt * accelResponse);
+            if (isUserPausedNow && visualSpeed < 0.002) visualSpeed = 0;
 
             // Effective Z velocity: forward cruise + scroll wheel impulse (negative Z is forward)
             const netZRate = (SCROLL_TO_Z * visualSpeed) + wheelImpulse;
@@ -600,10 +623,12 @@ const TunnelGallery = ({
                 : (netZRate / SCROLL_TO_Z) * 0.0025;
             distLy = Math.max(0, distLy + travelFactor * dt);
 
-            // Speed-coupled FOV warp tunnel stretch
-            const targetFov = isSlowMo && t < 0.05
-                ? SLOWMO_FOV
-                : BASE_FOV + Math.pow(t, 0.85) * (WARP_FOV - BASE_FOV);
+            // Speed-coupled FOV warp tunnel stretch (disabled under prefers-reduced-motion)
+            const targetFov = reduceMotionRef.current
+                ? BASE_FOV
+                : isSlowMo && t < 0.05
+                    ? SLOWMO_FOV
+                    : BASE_FOV + Math.pow(t, 0.85) * (WARP_FOV - BASE_FOV);
             currentFov += (targetFov - currentFov) * Math.min(1, dt * 6);
             if (Math.abs(camera.fov - currentFov) > 0.05) {
                 camera.fov = currentFov;
@@ -694,7 +719,9 @@ const TunnelGallery = ({
             mouseNorm.x += (targetMouseNorm.x - mouseNorm.x) * Math.min(1, dt * 6);
             mouseNorm.y += (targetMouseNorm.y - mouseNorm.y) * Math.min(1, dt * 6);
 
-            const rumbleIntensity = t > 0.1 && t < 0.98 ? Math.sin(t * Math.PI) * 0.008 : 0;
+            const rumbleIntensity = !reduceMotionRef.current && t > 0.1 && t < 0.98
+                ? Math.sin(t * Math.PI) * 0.008
+                : 0;
             const rumbleX = rumbleIntensity ? Math.sin(now * 0.045) * rumbleIntensity : 0;
             const rumbleY = rumbleIntensity ? Math.cos(now * 0.057) * rumbleIntensity : 0;
 
@@ -743,7 +770,11 @@ const TunnelGallery = ({
                 if (speedGaugeRef.current && statusGaugeRef.current) {
                     if (t <= 0.004) {
                         const netKms = Math.round(visualSpeed * 100 + smoothScrollKms);
-                        if (isSlowMo) {
+                        if (isUserPausedNow && Math.abs(smoothScrollKms) < 2) {
+                            speedGaugeRef.current.textContent = "0 KM/S";
+                            statusGaugeRef.current.textContent = "PAUSED";
+                            statusGaugeRef.current.className = `${STATUS_BASE} text-amber-400 font-bold`;
+                        } else if (isSlowMo) {
                             speedGaugeRef.current.textContent = `${Math.max(1, netKms)} KM/S`;
                             statusGaugeRef.current.textContent = "TIME DILATION";
                             statusGaugeRef.current.className = `${STATUS_BASE} text-amber-400 font-bold`;
@@ -763,9 +794,9 @@ const TunnelGallery = ({
                             statusGaugeRef.current.textContent = "REVERSE BRAKING";
                             statusGaugeRef.current.className = `${STATUS_BASE} text-amber-300 font-semibold`;
                         } else {
-                            speedGaugeRef.current.textContent = `${Math.max(1, netKms)} KM/S`;
-                            statusGaugeRef.current.textContent = "ORBITAL DRIFT";
-                            statusGaugeRef.current.className = `${STATUS_BASE} text-stone-400`;
+                            speedGaugeRef.current.textContent = `${Math.max(isUserPausedNow ? 0 : 1, netKms)} KM/S`;
+                            statusGaugeRef.current.textContent = isUserPausedNow ? "PAUSED" : "ORBITAL DRIFT";
+                            statusGaugeRef.current.className = `${STATUS_BASE} ${isUserPausedNow ? "text-amber-400 font-bold" : "text-stone-400"}`;
                         }
                     } else if (cFraction < 0.05) {
                         const kms = Math.round(45 + cFraction * 299747 + Math.max(0, smoothScrollKms));
@@ -837,6 +868,10 @@ const TunnelGallery = ({
         let lastPointerType = "mouse";
         let touchLock = null;
         let touchLockExpiry = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchLastY = 0;
+        let touchSwipeMoved = false;
 
         const releaseTouchLock = () => {
             touchLock = null;
@@ -845,8 +880,8 @@ const TunnelGallery = ({
         };
 
         const handleClick = (e) => {
-            // A long press means "hyperspace", not "select"
-            if (performance.now() - pressStart > 250) return;
+            // A long press means "hyperspace", and a swipe means "fly", not "select"
+            if (touchSwipeMoved || performance.now() - pressStart > 250) return;
             const hit = pickHit(e.clientX, e.clientY);
 
             if (lastPointerType === "touch") {
@@ -870,32 +905,17 @@ const TunnelGallery = ({
         };
 
         const applyCursorTransform = (el) => {
-            const flipX = el.dataset.flipX === "1";
-            const flipY = el.dataset.flipY === "1";
-            const scale = pressedRef.current ? 0.92 : 1;
-            el.style.transform = `translate(${flipX ? "calc(-100% - 14px)" : "14px"}, ${flipY ? "20px" : "calc(-100% - 12px)"}) scale(${scale})`;
+            applyPreviewCardTransform(el, pressedRef.current && !userPausedRef.current ? 0.92 : 1);
         };
 
-        // Place the preview card next to a screen point, flipping so it never leaves the frame
         const positionCard = (clientX, clientY) => {
-            const el = cursorRef.current;
-            if (!el) return;
-            const rect = frame.getBoundingClientRect();
-            if (rect.width <= 0 || rect.height <= 0) return;
-            const sx = frame.clientWidth / rect.width;
-            const sy = frame.clientHeight / rect.height;
-            el.style.left = `${(clientX - rect.left) * sx}px`;
-            el.style.top = `${(clientY - rect.top) * sy}px`;
-            el.dataset.flipX = rect.width - (clientX - rect.left) < 300 ? "1" : "0";
-            el.dataset.flipY = clientY - rect.top < 160 ? "1" : "0";
-            applyCursorTransform(el);
-        };
-
-        const setText = (ref, text) => {
-            const node = ref.current;
-            if (!node) return;
-            node.textContent = text;
-            node.style.display = text ? "" : "none";
+            positionPreviewCard(
+                cursorRef.current,
+                frame,
+                clientX,
+                clientY,
+                pressedRef.current && !userPausedRef.current ? 0.92 : 1
+            );
         };
 
         // Hover: the slab under the pointer is held almost still (180ms sticky grace to avoid flicker)
@@ -905,7 +925,8 @@ const TunnelGallery = ({
         let hoverProject = null;
         const updateHover = () => {
             lastHoverCheck = performance.now();
-            const hit = hoverPoint && !pressedRef.current ? pickHit(hoverPoint.x, hoverPoint.y) : null;
+            const isActiveBoost = pressedRef.current && !userPausedRef.current;
+            const hit = hoverPoint && !isActiveBoost ? pickHit(hoverPoint.x, hoverPoint.y) : null;
             const project = hit?.project || null;
             const slab = hit?.slab || null;
 
@@ -932,10 +953,11 @@ const TunnelGallery = ({
             hoverProject = project;
 
             if (project) {
-                setText(labelRef, project.title || "Untitled project");
-                setText(typeRef, project.type || "");
-                setText(descRef, project.shortDescription || project.description || "");
-                setText(hintRef, lastPointerType === "touch" ? "Tap again to open ↗" : "Click to open ↗");
+                updatePreviewCardText(
+                    { typeRef, labelRef, descRef, hintRef },
+                    project,
+                    lastPointerType === "touch" ? "Tap again to open ↗" : "Click to open ↗"
+                );
             }
             if (cursorRef.current) {
                 cursorRef.current.style.opacity = project ? "1" : "0";
@@ -944,7 +966,18 @@ const TunnelGallery = ({
         };
 
         const onMove = (e) => {
-            if (e.pointerType !== "touch") {
+            if (e.pointerType === "touch") {
+                const dy = touchLastY - e.clientY;
+                touchLastY = e.clientY;
+                if (!touchSwipeMoved && Math.hypot(e.clientX - touchStartX, e.clientY - touchStartY) > 12) {
+                    touchSwipeMoved = true;
+                    // Swiping to fly cancels Hyperspace hold so both gestures never fight
+                    pressedRef.current = false;
+                }
+                if (touchSwipeMoved) {
+                    wheelImpulse = Math.max(-0.6, Math.min(0.8, wheelImpulse + dy * 0.0045));
+                }
+            } else {
                 hoverPoint = { x: e.clientX, y: e.clientY };
                 if (performance.now() - lastHoverCheck > 30) updateHover();
             }
@@ -964,6 +997,8 @@ const TunnelGallery = ({
         const onLeave = (e) => {
             if (e?.pointerType === "touch") {
                 pressedRef.current = false;
+                targetMouseNorm.x = 0;
+                targetMouseNorm.y = 0;
                 return;
             }
             hoverPoint = null;
@@ -985,14 +1020,25 @@ const TunnelGallery = ({
             if (e.button !== 0 && e.pointerType === "mouse") return;
             pressStart = performance.now();
             lastPointerType = e.pointerType;
+            if (e.pointerType === "touch") {
+                touchStartX = e.clientX;
+                touchStartY = e.clientY;
+                touchLastY = e.clientY;
+                touchSwipeMoved = false;
+            }
             pressedRef.current = true;
             updateHover();
             const el = cursorRef.current;
             if (el) applyCursorTransform(el);
         };
 
-        const onUp = () => {
+        const onUp = (e) => {
             pressedRef.current = false;
+            if (e?.pointerType === "touch") {
+                // Re-center camera bank smoothly when touch ends
+                targetMouseNorm.x = 0;
+                targetMouseNorm.y = 0;
+            }
             const el = cursorRef.current;
             if (el) applyCursorTransform(el);
         };
@@ -1003,11 +1049,13 @@ const TunnelGallery = ({
             wheelImpulse = Math.max(-0.6, Math.min(0.8, wheelImpulse + impulse));
         };
 
-        // Flight simulator key bindings (Space / ArrowUp / W for Hyperspace, ArrowDown / S for Time Dilation)
+        // Flight simulator key bindings (Space / ArrowUp / W for Hyperspace, ArrowDown / S for Time Dilation, P for Pause)
         const onKeyDown = (e) => {
             // Inactive while the detail view is open, and never steal keys from buttons, links or fields
             if (pausedRef.current || e.target?.closest?.(INTERACTIVE_SELECTOR)) return;
-            if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
+            if (e.code === "KeyP" && !e.repeat) {
+                toggleUserPause();
+            } else if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
                 if (e.code === "Space") e.preventDefault();
                 pressedRef.current = true;
             } else if (e.code === "ArrowDown" || e.code === "KeyS") {
@@ -1037,6 +1085,7 @@ const TunnelGallery = ({
         frame.addEventListener("click", handleClick);
         frame.addEventListener("wheel", onWheel, { passive: false });
         window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onUp);
         window.addEventListener("keydown", onKeyDown);
         window.addEventListener("keyup", onKeyUp);
         window.addEventListener("blur", releaseAll);
@@ -1055,6 +1104,7 @@ const TunnelGallery = ({
             frame.removeEventListener("click", handleClick);
             frame.removeEventListener("wheel", onWheel);
             window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onUp);
             window.removeEventListener("keydown", onKeyDown);
             window.removeEventListener("keyup", onKeyUp);
             window.removeEventListener("blur", releaseAll);
@@ -1099,9 +1149,15 @@ const TunnelGallery = ({
     return (
         <div
             ref={frameRef}
-            className={`relative w-full h-full overflow-hidden bg-obsidian select-none cursor-crosshair ${className}`}
+            className={`relative w-full h-full overflow-hidden bg-obsidian select-none touch-none cursor-crosshair ${className}`}
         >
             <canvas ref={canvasRef} className="block w-full h-full" aria-hidden="true" />
+
+            {entries.length === 0 && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm font-sans text-stone-400 z-10">
+                    No projects to display.
+                </div>
+            )}
 
             {/* Dynamic peripheral speed vignette (tightens during Hyperspace) */}
             <div
@@ -1115,38 +1171,49 @@ const TunnelGallery = ({
             />
 
             {/* Project preview card: shown when a slab is locked (hover on desktop, first tap on touch) */}
-            <div
-                ref={cursorRef}
-                aria-hidden="true"
-                className="pointer-events-none absolute top-0 left-0 w-[min(75vw,17rem)] flex flex-col gap-1 px-4 py-3 rounded-2xl bg-stone-900/95 text-cream border border-red-500/60 shadow-lg shadow-black/80 backdrop-blur-md opacity-0 transition-opacity duration-150"
-            >
-                <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse motion-reduce:animate-none shrink-0" />
-                    <span ref={typeRef} className="text-[10px] font-mono font-medium uppercase tracking-wider text-red-400 truncate" />
-                </div>
-                <span ref={labelRef} className="text-sm font-sans font-semibold leading-snug text-cream" />
-                <p ref={descRef} className="text-[11px] font-sans leading-relaxed text-stone-400 line-clamp-2" />
-                <span ref={hintRef} className="mt-0.5 text-[11px] font-mono text-red-300" />
-            </div>
+            <ProjectPreviewCard
+                cardRef={cursorRef}
+                typeRef={typeRef}
+                labelRef={labelRef}
+                descRef={descRef}
+                hintRef={hintRef}
+            />
 
             {/* Flight Cockpit Telemetry HUD */}
-            <div className="absolute inset-x-0 bottom-0 px-6 py-4 bg-gradient-to-t from-obsidian via-obsidian/85 to-transparent flex items-end sm:items-center justify-between text-xs font-mono text-stone-400 pointer-events-none select-none z-10 gap-4">
-                <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-stone-900/80 border border-stone-800 shadow-sm min-w-[7.5rem]">
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse motion-reduce:animate-none shrink-0" />
+            <div className="absolute inset-x-0 bottom-0 px-3 sm:px-6 pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-4 bg-gradient-to-t from-obsidian via-obsidian/85 to-transparent flex flex-col sm:flex-row items-stretch sm:items-center justify-between text-xs font-mono text-stone-400 pointer-events-none select-none z-10 gap-1.5 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <button
+                        type="button"
+                        onClick={toggleUserPause}
+                        aria-pressed={isUserPaused}
+                        aria-label={isUserPaused ? "Resume tunnel flight" : "Pause tunnel flight"}
+                        title={isUserPaused ? "Resume flight [P]" : "Pause flight [P]"}
+                        className="pointer-events-auto inline-flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-md bg-stone-900/90 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-cream transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 shrink-0"
+                    >
+                        {isUserPaused ? <Play className="w-3.5 h-3.5 text-red-400" /> : <Pause className="w-3.5 h-3.5" />}
+                    </button>
+                    <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-stone-900/80 border border-stone-800 shadow-sm min-w-[6.5rem] sm:min-w-[7.5rem]">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${isUserPaused ? "bg-amber-400" : "bg-red-500 animate-pulse motion-reduce:animate-none"}`} />
                         <span ref={speedGaugeRef} className="text-cream font-bold tabular-nums">45 KM/S</span>
                     </span>
-                    <span ref={statusGaugeRef} className={`${STATUS_BASE} text-stone-400`}>
+                    <span ref={statusGaugeRef} className={`${STATUS_BASE} text-stone-400 truncate`}>
                         ORBITAL DRIFT
                     </span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <span ref={depthGaugeRef} className="px-2.5 py-1 rounded-md bg-stone-900/80 border border-stone-800 text-stone-300 shadow-sm text-[11px] tabular-nums">
+                <div className="flex items-center justify-between sm:justify-end gap-3">
+                    <span ref={depthGaugeRef} className="px-2.5 py-1 rounded-md bg-stone-900/80 border border-stone-800 text-stone-300 shadow-sm text-[10px] sm:text-[11px] tabular-nums">
                         DIST 0.00 LY
                     </span>
+                    <span className="md:hidden text-stone-500 text-[10px] truncate">
+                        {isUserPaused
+                            ? "Paused · Swipe to nudge · Tap slab ×2 or Play"
+                            : "Swipe to fly · Hold for Warp · Tap slab ×2"}
+                    </span>
                     <span className="hidden md:inline text-stone-500 text-[11px]">
-                        Hold click or [Space] for Hyperspace · Hover slab for Time Dilation
+                        {isUserPaused
+                            ? "Paused · Scroll to nudge · Click slab or press [P] to resume"
+                            : "Hold click or [Space] for Hyperspace · Hover slab for Time Dilation"}
                     </span>
                 </div>
             </div>

@@ -103,12 +103,12 @@ const EMPTY_PROJECTS = [];
  * - Desktop (>= 720px): Magnetic Dock Carousel with smooth proximity wave & spotlight expansion.
  * - Mobile (< 720px): Clean vertical accordion stack.
  */
-const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
+const FeaturedProjects = ({ projects = EMPTY_PROJECTS, loading = false }) => {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.1 });
 
   const displayProjects = useMemo(() => {
     const list = Array.isArray(projects) ? projects.filter(Boolean) : [];
-    // Only fall back to dummy demo projects if user has no projects at all
+    // Only fall back to dummy demo projects if user has no projects at all (and not loading)
     if (list.length > 0) return list;
     return FALLBACK_7_PROJECTS;
   }, [projects]);
@@ -116,6 +116,8 @@ const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
   return (
     <section
       ref={sectionRef}
+      id="projects"
+      data-section="projects"
       data-magnetic-area
       aria-labelledby="projects-heading"
       className="relative min-h-[100dvh] py-10 md:py-14 px-6 bg-transparent border-t border-stone-800/40 overflow-hidden flex flex-col justify-center"
@@ -142,8 +144,8 @@ const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <div className="flex flex-col items-start">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 mb-2 rounded-full bg-stone-900/70 border border-stone-800">
+          <div className="flex flex-col items-start w-full md:w-auto">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 mb-4 sm:mb-5 rounded-full bg-stone-900/70 border border-stone-800">
               <Briefcase aria-hidden="true" className="w-3.5 h-3.5 text-red-400" />
               <span className="text-xs font-mono tracking-wide text-stone-300">Selected Work</span>
             </div>
@@ -152,13 +154,13 @@ const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
               id="projects-heading"
               text="Projects"
               align="left"
-              className="w-[min(92vw,480px)] h-[60px] sm:h-[75px] md:h-[85px]"
+              className="w-full md:w-[320px] h-[52px] sm:h-[60px] md:h-[68px]"
             />
           </div>
 
           <Link
             to="/projects"
-            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900/70 border border-stone-800 text-stone-200 font-medium text-sm hover:border-red-500/40 hover:text-red-400 transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900/70 border border-stone-800 text-stone-200 font-medium text-sm hover:border-red-500/40 hover:text-red-400 transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 shrink-0 mt-1 md:mt-0"
           >
             <span>View All Projects</span>
             <ArrowRight className="w-4 h-4 text-red-400 group-hover:translate-x-1 transition-transform" />
@@ -170,7 +172,31 @@ const FeaturedProjects = ({ projects = EMPTY_PROJECTS }) => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <MagneticProjects projects={displayProjects} />
+          {loading ? (
+            <div
+              aria-hidden="true"
+              className="w-full"
+            >
+              <div className="hidden md:flex items-center justify-center gap-3 h-[340px]">
+                {Array.from({ length: 7 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="h-[340px] flex-1 max-w-[110px] rounded-2xl border border-stone-800/50 bg-stone-900/30 animate-pulse"
+                  />
+                ))}
+              </div>
+              <div className="flex flex-col gap-3 md:hidden">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="h-24 w-full rounded-2xl border border-stone-800/50 bg-stone-900/30 animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <MagneticProjects projects={displayProjects} />
+          )}
         </div>
       </div>
     </section>

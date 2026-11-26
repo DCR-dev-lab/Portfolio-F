@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { createSim, layoutFromBase } from "./particleSim";
-import { getEntries, setStatus, subscribe } from "./particleRegistry";
+import { getEntries, setStatus } from "./particleRegistry";
 
 /**
  * ParticleStage
@@ -27,7 +27,7 @@ const VERT = `
     float p = 900.0 / (900.0 - position.z);
     float x = position.x + uTilt * position.z * 0.06;
     gl_Position = vec4(x / uRes.x * 2.0 - 1.0, 1.0 - position.y / uRes.y * 2.0, 0.0, 1.0);
-    gl_PointSize = max(aSize * p * uDpr * 2.0, 1.0);
+    gl_PointSize = max(aSize * p * uDpr * 2.3, 1.2);
     vColor = aColor;
     vAlpha = aAlpha;
   }
@@ -38,7 +38,10 @@ const FRAG = `
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (d > 0.5) discard;
-    gl_FragColor = vec4(vColor, smoothstep(0.5, 0.3, d) * vAlpha);
+    float core = smoothstep(0.40, 0.24, d);
+    float glow = smoothstep(0.50, 0.15, d) * 0.42;
+    float alpha = clamp(core + glow, 0.0, 1.0) * vAlpha;
+    gl_FragColor = vec4(vColor * (1.0 + core * 0.18), alpha);
   }
 `;
 
@@ -69,10 +72,23 @@ const sampleBase = (entry, boxW, boxH) => {
 
   const data = g.getImageData(0, 0, c.width, c.height).data;
   let area = 0;
-  for (let i = 3; i < data.length; i += 4) if (data[i] > 128) area++;
-  if (!area) return null;
+  let minX = c.width, maxX = 0, minY = c.height, maxY = 0;
+  for (let y = 0; y < c.height; y++) {
+    for (let x = 0; x < c.width; x++) {
+      if (data[(y * c.width + x) * 4 + 3] > 128) {
+        area++;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (!area || maxX < minX || maxY < minY) return null;
 
-  const pxScale = Math.min((boxW * 0.96) / c.width, (boxH * 0.96) / c.height);
+  const inkW = maxX - minX + 1;
+  const inkH = maxY - minY + 1;
+  const pxScale = Math.min((boxW * 0.96) / inkW, (boxH * 0.96) / inkH);
   const cssArea = area * pxScale * pxScale;
   const gap = mobile ? 2.3 : 2.0;
   const cap = mobile ? (entry.capMobile ?? 1400) : (entry.cap ?? 2400);
@@ -108,6 +124,14 @@ const sampleBase = (entry, boxW, boxH) => {
     N,
     cw: c.width,
     ch: c.height,
+    minX,
+    maxX,
+    minY,
+    maxY,
+    inkW,
+    inkH,
+    midX: (minX + maxX) * 0.5,
+    midY: (minY + maxY) * 0.5,
     area,
     gx,
     gy,
@@ -284,7 +308,6 @@ const ParticleStage = () => {
       renderer.setSize(W, H);
       material.uniforms.uRes.value.set(W, H);
       sim.resize(W, H);
-      invalidateHeadingCache();
     };
     const onResize = () => {
       const w = document.documentElement.clientWidth || window.innerWidth;
@@ -302,16 +325,6 @@ const ParticleStage = () => {
     /* ---- loop ---- */
     let raf = 0;
     let last = performance.now();
-    // Cache heading positions in document-space to eliminate getBoundingClientRect() layout thrashing on every frame
-    const headingPosCache = new Map();
-
-    const invalidateHeadingCache = () => {
-      headingPosCache.clear();
-    };
-
-    const unsubRegistry = subscribe(() => {
-      invalidateHeadingCache();
-    });
 
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
@@ -323,31 +336,18 @@ const ParticleStage = () => {
       for (const entry of getEntries()) {
         if (!fontsOk) break;
         const el = entry.el;
-        if (!el || !el.isConnected) {
-          headingPosCache.delete(entry.id);
-          continue;
-        }
+        if (!el || !el.isConnected) continue;
 
-        let pos = headingPosCache.get(entry.id);
-        if (!pos || pos.width <= 0 || pos.height <= 0) {
-          const r = el.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0) {
-            pos = {
-              docTop: r.top + currentScrollY,
-              docLeft: r.left,
-              width: r.width,
-              height: r.height,
-            };
-            headingPosCache.set(entry.id, pos);
-          }
-        }
-        if (!pos || pos.width <= 0 || pos.height <= 0) continue;
+        // Measure live screen-relative rect so particles track the element with 100% precision
+        // through entrance transitions (translateY), dynamic content, and mobile address bar shifts
+        const r = el.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) continue;
 
-        const top = pos.docTop - currentScrollY;
-        const bottom = top + pos.height;
+        const top = r.top;
+        const bottom = r.bottom;
         if (bottom < -1.5 * H || top > 2.5 * H) continue; // far away: not worth sampling
 
-        const s = getSample(entry, pos.width, pos.height);
+        const s = getSample(entry, r.width, r.height);
         if (!s) continue;
         list.push({
           id: entry.id,
@@ -359,11 +359,11 @@ const ParticleStage = () => {
           dotR: s.dotR,
           intro: !!entry.intro,
           rect: {
-            left: pos.docLeft,
-            top,
-            width: pos.width,
-            height: pos.height,
-            bottom,
+            left: r.left,
+            top: r.top,
+            width: r.width,
+            height: r.height,
+            bottom: r.bottom,
           },
         });
       }
@@ -379,7 +379,6 @@ const ParticleStage = () => {
     setStatus("ready");
 
     return () => {
-      unsubRegistry();
       cancelAnimationFrame(raf);
       clearTimeout(timer);
       window.removeEventListener("pointermove", onMove);

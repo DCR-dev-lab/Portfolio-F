@@ -67,16 +67,29 @@ const smooth = (x) => x * x * (3 - 2 * x);
  * point on the same letter and simply slides to the scaled spot (no re-shuffle, no re-gather).
  */
 export const layoutFromBase = (b, boxW, boxH, align) => {
-  const pxScale = Math.min((boxW * 0.96) / b.cw, (boxH * 0.96) / b.ch);
-  const tW = b.cw * pxScale;
-  const ox = align === "left" ? -boxW / 2 + tW / 2 - 20 * pxScale : 0;
+  const inkW = b.inkW || b.cw;
+  const inkH = b.inkH || b.ch;
+  const pxScale = Math.min((boxW * 0.96) / inkW, (boxH * 0.96) / inkH);
   const N = b.N;
   const lx = new Float32Array(N);
   const ly = new Float32Array(N);
+
+  const midX = b.midX ?? b.cw * 0.5;
+  const midY = b.midY ?? b.ch * 0.5;
+  const minX = b.minX ?? 20;
+
   for (let k = 0; k < N; k++) {
-    lx[k] = ox + (b.gx[k] - b.cw / 2) * pxScale;
-    ly[k] = (b.gy[k] - b.ch / 2) * pxScale;
+    // align="left": leftmost ink particle starts flush with the box left edge (-boxW * 0.5)
+    // align="center": center of ink is placed at box center (0)
+    if (align === "left") {
+      lx[k] = -boxW * 0.5 + (b.gx[k] - minX) * pxScale;
+    } else {
+      lx[k] = (b.gx[k] - midX) * pxScale;
+    }
+    // Vertical position is always centered inside boxH with subpixel precision
+    ly[k] = (b.gy[k] - midY) * pxScale;
   }
+
   return {
     lx,
     ly,

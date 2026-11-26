@@ -211,7 +211,7 @@ const Contact = () => {
                             padding="9px 16px"
                             rounded={100}
                             ariaLabel={method.actionLabel}
-                            style={{ width: "136px" }}
+                            className="contact-btn-primary"
                           />
                         )}
 
