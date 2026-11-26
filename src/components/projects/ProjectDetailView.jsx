@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, ArrowLeft, Github, ChevronLeft, ChevronRight } from "lucide-react";
@@ -33,6 +33,24 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
 
     const isOpen = Boolean(project);
     const projectId = project ? getProjectId(project) : null;
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+    const gallery = useMemo(() => {
+        if (!project) return [];
+        const raw = [project.imageUrl, ...(Array.isArray(project.images) ? project.images : [])];
+        const clean = [];
+        for (const item of raw) {
+            const safe = sanitizeImageUrl(item);
+            if (safe && !clean.includes(safe)) clean.push(safe);
+        }
+        return clean;
+    }, [project]);
+
+    useEffect(() => {
+        setActiveImageIndex(0);
+    }, [projectId]);
+
+    const activeImage = gallery[activeImageIndex] || sanitizeImageUrl(project?.imageUrl);
     const index = project ? projects.findIndex((p) => getProjectId(p) === projectId) : -1;
     const canNavigate = index !== -1 && projects.length > 1;
 
@@ -128,15 +146,15 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
                 >
                     {/* Background artwork under a dark scrim */}
                     <div className="absolute inset-0 z-0 select-none overflow-hidden" aria-hidden="true">
-                        {sanitizeImageUrl(project.imageUrl) ? (
+                        {activeImage ? (
                             <motion.img
-                                key={projectId}
-                                src={sanitizeImageUrl(project.imageUrl)}
+                                key={`${projectId}-${activeImage}`}
+                                src={activeImage}
                                 alt=""
                                 initial={{ scale: 1.06, opacity: 0.3 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={timing(0.5)}
-                                className="w-full h-full object-cover brightness-[0.4]"
+                                className="w-full h-full object-cover brightness-[0.45]"
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-stone-900 via-stone-950 to-obsidian" />
@@ -234,6 +252,39 @@ const ProjectDetailView = ({ projects = [], project, onClose, onSelect }) => {
                                                 {tech}
                                             </span>
                                         ))}
+                                    </div>
+                                )}
+
+                                {gallery.length > 1 && (
+                                    <div className="mt-6">
+                                        <p className="mb-2 text-xs font-medium text-stone-400">
+                                            Gallery ({activeImageIndex + 1} of {gallery.length})
+                                        </p>
+                                        <div className="flex items-center gap-2.5 overflow-x-auto pb-1">
+                                            {gallery.map((src, idx) => {
+                                                const isActive = idx === activeImageIndex;
+                                                return (
+                                                    <button
+                                                        key={`${src}-${idx}`}
+                                                        type="button"
+                                                        onClick={() => setActiveImageIndex(idx)}
+                                                        aria-label={`View screenshot ${idx + 1}`}
+                                                        aria-pressed={isActive}
+                                                        className={`relative h-14 w-24 shrink-0 overflow-hidden rounded-lg border transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 ${
+                                                            isActive
+                                                                ? "border-red-500 ring-1 ring-red-500/50"
+                                                                : "border-stone-800 opacity-60 hover:opacity-100 hover:border-stone-600"
+                                                        }`}
+                                                    >
+                                                        <img
+                                                            src={src}
+                                                            alt={`${project.title} screenshot ${idx + 1}`}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 

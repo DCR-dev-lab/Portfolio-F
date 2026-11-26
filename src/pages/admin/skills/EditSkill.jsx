@@ -2,9 +2,16 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 import SkillForm from "./SkillForm";
+import usePageSEO from "../../../hooks/usePageSEO";
 import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 
 const EditSkill = () => {
+    usePageSEO({
+        title: "Edit Skill | Mod Studio",
+        description: "Edit portfolio skill details.",
+        noindex: true,
+    });
+
     const { id } = useParams();
     const navigate = useNavigate();
     const [skill, setSkill] = useState(null);

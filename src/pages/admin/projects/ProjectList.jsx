@@ -14,6 +14,8 @@ import {
     ArrowDown,
     Pencil,
     Trash2,
+    Eye,
+    EyeOff,
 } from "lucide-react";
 
 const sortProjectsByHierarchy = (list) =>
@@ -35,9 +37,10 @@ const ProjectList = ({ projects = [], onProjectsChange, onDelete, onRefresh }) =
 
     const query = searchParams.get("q") || "";
     const category = searchParams.get("cat") || "All";
-    const isFiltered = Boolean(query.trim()) || category !== "All";
+    const visibility = searchParams.get("vis") || "all";
+    const isFiltered = Boolean(query.trim()) || category !== "All" || visibility !== "all";
 
-    const updateFilter = (newQuery, newCat) => {
+    const updateFilter = (newQuery, newCat, newVis) => {
         const params = new URLSearchParams(searchParams);
         if (newQuery !== undefined) {
             if (newQuery.trim()) params.set("q", newQuery);
@@ -46,6 +49,10 @@ const ProjectList = ({ projects = [], onProjectsChange, onDelete, onRefresh }) =
         if (newCat !== undefined) {
             if (newCat && newCat !== "All") params.set("cat", newCat);
             else params.delete("cat");
+        }
+        if (newVis !== undefined) {
+            if (newVis && newVis !== "all") params.set("vis", newVis);
+            else params.delete("vis");
         }
         setSearchParams(params, { replace: true });
     };
@@ -64,9 +71,14 @@ const ProjectList = ({ projects = [], onProjectsChange, onDelete, onRefresh }) =
                 p.shortDescription?.toLowerCase().includes(query.toLowerCase()) ||
                 p.technologies?.some((t) => t.toLowerCase().includes(query.toLowerCase()));
             const matchesCategory = category === "All" || p.category === category;
-            return matchesQuery && matchesCategory;
+            const isPub = p.isPublished !== false;
+            const matchesVis =
+                visibility === "all" ||
+                (visibility === "live" && isPub) ||
+                (visibility === "draft" && !isPub);
+            return matchesQuery && matchesCategory && matchesVis;
         });
-    }, [projects, query, category]);
+    }, [projects, query, category, visibility]);
 
     const handleToggleFeatured = async (project) => {
         const nextFeatured = !project.featured;
@@ -87,6 +99,30 @@ const ProjectList = ({ projects = [], onProjectsChange, onDelete, onRefresh }) =
         } catch {
             onProjectsChange?.(previous);
             toast.error("Failed to update featured status.");
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const handleTogglePublished = async (project) => {
+        const currentPublished = project.isPublished !== false;
+        const nextPublished = !currentPublished;
+        const previous = projects;
+
+        const optimistic = projects.map((p) =>
+            p._id === project._id ? { ...p, isPublished: nextPublished } : p
+        );
+        onProjectsChange?.(optimistic);
+        setBusyId(project._id);
+
+        try {
+            await api.put(`/admin/dashboard/projects/${project._id}`, { isPublished: nextPublished });
+            toast.success(
+                nextPublished ? `"${project.title}" published.` : `"${project.title}" moved to Drafts.`
+            );
+        } catch {
+            onProjectsChange?.(previous);
+            toast.error("Failed to update visibility.");
         } finally {
             setBusyId(null);
         }
@@ -194,23 +230,45 @@ const ProjectList = ({ projects = [], onProjectsChange, onDelete, onRefresh }) =
                         )}
                     </div>
 
-                    {categories.length > 1 && (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            {categories.map((cat) => (
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-1 rounded-lg border border-stone-800 bg-stone-900/60 p-0.5">
+                            {[
+                                { value: "all", label: "All" },
+                                { value: "live", label: "Live" },
+                                { value: "draft", label: "Drafts" },
+                            ].map((opt) => (
                                 <button
-                                    key={cat}
-                                    onClick={() => updateFilter(undefined, cat)}
+                                    key={opt.value}
+                                    onClick={() => updateFilter(undefined, undefined, opt.value)}
                                     className={`rounded-md px-2.5 py-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
-                                        category === cat
+                                        visibility === opt.value
                                             ? "bg-stone-700 text-cream font-medium"
-                                            : "text-stone-400 hover:bg-stone-800 hover:text-cream"
+                                            : "text-stone-400 hover:text-cream"
                                     }`}
                                 >
-                                    {cat}
+                                    {opt.label}
                                 </button>
                             ))}
                         </div>
-                    )}
+
+                        {categories.length > 1 && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {categories.map((cat) => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => updateFilter(undefined, cat)}
+                                        className={`rounded-md px-2.5 py-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
+                                            category === cat
+                                                ? "bg-stone-700 text-cream font-medium"
+                                                : "text-stone-400 hover:bg-stone-800 hover:text-cream"
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -239,7 +297,7 @@ const ProjectList = ({ projects = [], onProjectsChange, onDelete, onRefresh }) =
                 <div className="rounded-xl border border-stone-800 bg-stone-900/40 p-12 text-center text-stone-500">
                     <p className="text-sm">No projects matching your search criteria.</p>
                     <button
-                        onClick={() => updateFilter("", "All")}
+                        onClick={() => updateFilter("", "All", "all")}
                         className="mt-2 rounded text-xs text-crimson hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson"
                     >
                         Clear search filters
@@ -276,6 +334,20 @@ const ProjectList = ({ projects = [], onProjectsChange, onDelete, onRefresh }) =
                                                 className={p.featured ? "fill-amber-400 text-amber-400" : "text-stone-500"}
                                             />
                                             {p.featured ? "Featured" : "Pin"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={isBusy}
+                                            onClick={() => handleTogglePublished(p)}
+                                            aria-pressed={p.isPublished !== false}
+                                            className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson active:opacity-80 disabled:opacity-50 ${
+                                                p.isPublished === false
+                                                    ? "border-stone-700 bg-stone-950 text-stone-400"
+                                                    : "border-emerald-800/50 bg-emerald-950/30 text-emerald-300"
+                                            }`}
+                                        >
+                                            {p.isPublished === false ? <EyeOff size={12} /> : <Eye size={12} />}
+                                            {p.isPublished === false ? "Draft" : "Live"}
                                         </button>
                                     </div>
 

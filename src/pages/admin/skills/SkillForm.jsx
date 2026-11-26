@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import api from "../../../services/api";
 import { toast } from "sonner";
+import { useUnsavedChanges } from "../../../context/UnsavedChangesContext";
+import { FieldLabel, DarkInput, DarkSelect, Section } from "../../../components/ui/FormPrimitives";
 import {
-    Wrench,
     Save,
     X,
     AlertCircle,
@@ -11,46 +12,6 @@ import {
     Layers,
     Sparkles,
 } from "lucide-react";
-
-/* ── Reusable field primitives ──────────────────────────────── */
-const FieldLabel = ({ children }) => (
-    <label className="mb-1.5 block text-xs font-medium text-stone-400">
-        {children}
-    </label>
-);
-
-const DarkInput = ({ icon: Icon, ...props }) => (
-    <div className="relative">
-        {Icon && (
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-500">
-                <Icon size={14} />
-            </span>
-        )}
-        <input
-            {...props}
-            className={`w-full rounded-lg border border-stone-700/70 bg-stone-900 py-2.5 text-sm text-cream placeholder-stone-600 outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
-                Icon ? "pl-9 pr-3.5" : "px-3.5"
-            } ${props.className || ""}`}
-        />
-    </div>
-);
-
-const DarkSelect = ({ children, ...props }) => (
-    <select
-        {...props}
-        className={`w-full rounded-lg border border-stone-700/70 bg-stone-900 px-3.5 py-2.5 text-sm text-cream outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${props.className || ""}`}
-    >
-        {children}
-    </select>
-);
-
-const Section = ({ title, children }) => (
-    <div className="rounded-xl border border-stone-800/70 bg-stone-900/50 p-5">
-        <h3 className="mb-4 text-sm font-semibold text-stone-300">{title}</h3>
-        <div className="space-y-4">{children}</div>
-    </div>
-);
-/* ───────────────────────────────────────────────────────────── */
 
 const CATEGORY_OPTIONS = ["Frontend", "Backend", "DevOps", "Database"];
 
@@ -66,13 +27,29 @@ const SkillForm = ({ skill, onSuccess, onCancel }) => {
         };
     }, [skill]);
 
-    const [name, setName] = useState(skill?.name || "");
-    const [proficiency, setProficiency] = useState(skill?.proficiency ?? "");
+    const initialName = skill?.name || "";
+    const initialProficiency = String(skill?.proficiency ?? "");
+    const initialIconKeyword = skill?.iconKeyword || "";
+
+    const [name, setName] = useState(initialName);
+    const [proficiency, setProficiency] = useState(initialProficiency);
     const [category, setCategory] = useState(initialData.category);
     const [customCategory, setCustomCategory] = useState(initialData.customCategory);
-    const [iconKeyword, setIconKeyword] = useState(skill?.iconKeyword || "");
+    const [iconKeyword, setIconKeyword] = useState(initialIconKeyword);
     const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState(null);
+
+    const isDirty = useMemo(
+        () =>
+            name !== initialName ||
+            String(proficiency) !== initialProficiency ||
+            category !== initialData.category ||
+            customCategory !== initialData.customCategory ||
+            iconKeyword !== initialIconKeyword,
+        [name, proficiency, category, customCategory, iconKeyword, initialName, initialProficiency, initialData, initialIconKeyword]
+    );
+
+    const { confirmNavigation } = useUnsavedChanges(isDirty);
 
     const submit = async (e) => {
         e.preventDefault();
@@ -201,7 +178,7 @@ const SkillForm = ({ skill, onSuccess, onCancel }) => {
                     </button>
                     <button
                         type="button"
-                        onClick={onCancel}
+                        onClick={() => confirmNavigation(onCancel)}
                         className="flex items-center gap-2 rounded-lg border border-stone-700/70 px-5 py-2.5 text-sm font-medium text-stone-400 transition-colors hover:border-stone-600 hover:text-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson active:opacity-80"
                     >
                         <X size={14} />

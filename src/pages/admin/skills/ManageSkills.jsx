@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../../services/api";
 import SkillList from "./SkillList";
+import usePageSEO from "../../../hooks/usePageSEO";
 import { Loader2 } from "lucide-react";
 
 const ManageSkills = () => {
+    usePageSEO({
+        title: "Skills | Mod Studio",
+        description: "Manage portfolio skills.",
+        noindex: true,
+    });
+
     const [skills, setSkills] = useState([]);
     const [loading, setLoading] = useState(true);
 

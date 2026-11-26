@@ -1,70 +1,25 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import api from "../../../services/api";
 import MDEditor from "@uiw/react-md-editor";
 import ImageUploadField from "../../../components/ui/ImageUploadField";
+import MultiImageUploadField from "../../../components/ui/MultiImageUploadField";
 import { SAFE_MD_PREVIEW_OPTIONS } from "../../../utils/security";
+import { useUnsavedChanges } from "../../../context/UnsavedChangesContext";
+import { FieldLabel, DarkInput, DarkSelect, Section } from "../../../components/ui/FormPrimitives";
 import { toast } from "sonner";
 import {
-    FolderKanban,
     Save,
     X,
     AlertCircle,
     Link as LinkIcon,
     Github,
-    Tag,
     FileText,
     Hash,
     Layers,
     Star,
+    Eye,
+    EyeOff,
 } from "lucide-react";
-
-/* ── Reusable field primitives ──────────────────────────────── */
-const FieldLabel = ({ children }) => (
-    <label className="mb-1.5 block text-xs font-medium text-stone-400">
-        {children}
-    </label>
-);
-
-const DarkInput = ({ icon: Icon, ...props }) => (
-    <div className="relative">
-        {Icon && (
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-500">
-                <Icon size={14} />
-            </span>
-        )}
-        <input
-            {...props}
-            className={`w-full rounded-lg border border-stone-700/70 bg-stone-900 py-2.5 text-sm text-cream placeholder-stone-600 outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
-                Icon ? "pl-9 pr-3.5" : "px-3.5"
-            } ${props.className || ""}`}
-        />
-    </div>
-);
-
-const DarkSelect = ({ children, ...props }) => (
-    <select
-        {...props}
-        className={`w-full rounded-lg border border-stone-700/70 bg-stone-900 px-3.5 py-2.5 text-sm text-cream outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${props.className || ""}`}
-    >
-        {children}
-    </select>
-);
-
-const DarkTextarea = ({ rows = 4, ...props }) => (
-    <textarea
-        rows={rows}
-        {...props}
-        className={`w-full resize-y rounded-lg border border-stone-700/70 bg-stone-900 px-3.5 py-2.5 text-sm text-cream placeholder-stone-600 outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${props.className || ""}`}
-    />
-);
-
-const Section = ({ title, children }) => (
-    <div className="rounded-xl border border-stone-800/70 bg-stone-900/50 p-5">
-        <h3 className="mb-4 text-sm font-semibold text-stone-300">{title}</h3>
-        <div className="space-y-4">{children}</div>
-    </div>
-);
-/* ───────────────────────────────────────────────────────────── */
 
 const CATEGORY_OPTIONS = ["", "Frontend", "Backend", "Full Stack", "Mobile", "Design", "DevOps", "Other"];
 const STATUS_OPTIONS = ["", "Live", "In Progress", "Archived", "Private"];
@@ -73,22 +28,66 @@ const TYPE_OPTIONS = ["", "Personal", "Client", "Open Source", "Academic", "Side
 const ProjectForm = ({ project, onSuccess, onCancel }) => {
     const isEdit = Boolean(project?._id);
 
-    const [title, setTitle] = useState(project?.title || "");
-    const [shortDescription, setShortDescription] = useState(project?.shortDescription || "");
-    const [longDescription, setLongDescription] = useState(project?.longDescription || "");
-    const [imageUrl, setImageUrl] = useState(project?.imageUrl || "");
-    const [projectUrl, setProjectUrl] = useState(project?.projectUrl || "");
-    const [technologies, setTechnologies] = useState(
-        Array.isArray(project?.technologies) ? project.technologies.join(", ") : ""
+    const initialSnapshot = useMemo(
+        () => ({
+            title: project?.title || "",
+            shortDescription: project?.shortDescription || "",
+            longDescription: project?.longDescription || "",
+            imageUrl: project?.imageUrl || "",
+            images: Array.isArray(project?.images) ? project.images : [],
+            projectUrl: project?.projectUrl || "",
+            technologies: Array.isArray(project?.technologies) ? project.technologies.join(", ") : "",
+            githubUrl: project?.githubUrl || "",
+            category: project?.category || "",
+            status: project?.status || "",
+            type: project?.type || "",
+            featured: Boolean(project?.featured),
+            order: String(project?.order ?? 0),
+            isPublished: project?.isPublished ?? true,
+        }),
+        [project]
     );
-    const [githubUrl, setGithubUrl] = useState(project?.githubUrl || "");
-    const [category, setCategory] = useState(project?.category || "");
-    const [status, setStatus] = useState(project?.status || "");
-    const [type, setType] = useState(project?.type || "");
-    const [featured, setFeatured] = useState(Boolean(project?.featured));
-    const [order, setOrder] = useState(project?.order ?? 0);
+
+    const [title, setTitle] = useState(initialSnapshot.title);
+    const [shortDescription, setShortDescription] = useState(initialSnapshot.shortDescription);
+    const [longDescription, setLongDescription] = useState(initialSnapshot.longDescription);
+    const [imageUrl, setImageUrl] = useState(initialSnapshot.imageUrl);
+    const [images, setImages] = useState(initialSnapshot.images);
+    const [projectUrl, setProjectUrl] = useState(initialSnapshot.projectUrl);
+    const [technologies, setTechnologies] = useState(initialSnapshot.technologies);
+    const [githubUrl, setGithubUrl] = useState(initialSnapshot.githubUrl);
+    const [category, setCategory] = useState(initialSnapshot.category);
+    const [status, setStatus] = useState(initialSnapshot.status);
+    const [type, setType] = useState(initialSnapshot.type);
+    const [featured, setFeatured] = useState(initialSnapshot.featured);
+    const [order, setOrder] = useState(initialSnapshot.order);
+    const [isPublished, setIsPublished] = useState(initialSnapshot.isPublished);
     const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState("");
+
+    const isDirty = useMemo(
+        () =>
+            title !== initialSnapshot.title ||
+            shortDescription !== initialSnapshot.shortDescription ||
+            longDescription !== initialSnapshot.longDescription ||
+            imageUrl !== initialSnapshot.imageUrl ||
+            JSON.stringify(images) !== JSON.stringify(initialSnapshot.images) ||
+            projectUrl !== initialSnapshot.projectUrl ||
+            technologies !== initialSnapshot.technologies ||
+            githubUrl !== initialSnapshot.githubUrl ||
+            category !== initialSnapshot.category ||
+            status !== initialSnapshot.status ||
+            type !== initialSnapshot.type ||
+            featured !== initialSnapshot.featured ||
+            String(order) !== initialSnapshot.order ||
+            isPublished !== initialSnapshot.isPublished,
+        [
+            title, shortDescription, longDescription, imageUrl, images, projectUrl,
+            technologies, githubUrl, category, status, type, featured, order, isPublished, initialSnapshot,
+        ]
+    );
+
+    const { confirmNavigation } = useUnsavedChanges(isDirty);
 
     const submit = async (e) => {
         e.preventDefault();
@@ -101,6 +100,7 @@ const ProjectForm = ({ project, onSuccess, onCancel }) => {
             shortDescription,
             longDescription,
             imageUrl,
+            images,
             projectUrl,
             technologies: technologies.split(",").map((tech) => tech.trim()).filter(Boolean),
             githubUrl,
@@ -109,6 +109,7 @@ const ProjectForm = ({ project, onSuccess, onCancel }) => {
             type: type || undefined,
             featured,
             order: Number.isFinite(parsedOrder) ? parsedOrder : 0,
+            isPublished,
         };
 
         try {
@@ -186,10 +187,24 @@ const ProjectForm = ({ project, onSuccess, onCancel }) => {
                 {/* Links & Media */}
                 <Section title="Links & Media">
                     <ImageUploadField
-                        label="Project Image"
+                        label="Cover Image"
                         value={imageUrl}
                         onChange={setImageUrl}
                         required
+                    />
+                    <MultiImageUploadField
+                        label="Project Gallery"
+                        value={images}
+                        onChange={setImages}
+                        onSetAsCover={(url) => {
+                            if (imageUrl && imageUrl !== url && !images.includes(imageUrl)) {
+                                setImages((prev) => [...prev.filter((i) => i !== url), imageUrl]);
+                            } else {
+                                setImages((prev) => prev.filter((i) => i !== url));
+                            }
+                            setImageUrl(url);
+                            toast.success("Cover image updated.");
+                        }}
                     />
                     <div>
                         <FieldLabel>Live Project URL</FieldLabel>
@@ -233,7 +248,7 @@ const ProjectForm = ({ project, onSuccess, onCancel }) => {
 
                 {/* Hierarchy & Display */}
                 <Section title="Hierarchy & Display">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div>
                             <FieldLabel>Display order <span className="text-stone-600">(1 = first, 0 = auto)</span></FieldLabel>
                             <DarkInput
@@ -259,10 +274,31 @@ const ProjectForm = ({ project, onSuccess, onCancel }) => {
                             >
                                 <span className="flex items-center gap-2 font-medium">
                                     <Star size={15} className={featured ? "fill-amber-400 text-amber-400" : "text-stone-500"} />
-                                    Featured on home
+                                    Featured
                                 </span>
                                 <span className={`text-xs font-semibold ${featured ? "text-amber-300" : "text-stone-500"}`}>
                                     {featured ? "Pinned" : "Standard"}
+                                </span>
+                            </button>
+                        </div>
+                        <div className="flex flex-col justify-end">
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={isPublished}
+                                onClick={() => setIsPublished((prev) => !prev)}
+                                className={`flex items-center justify-between rounded-lg border px-4 py-2.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson active:opacity-80 ${
+                                    isPublished
+                                        ? "border-emerald-700/60 bg-emerald-950/30 text-emerald-300"
+                                        : "border-stone-700/70 bg-stone-900 text-stone-400 hover:border-stone-600 hover:text-cream"
+                                }`}
+                            >
+                                <span className="flex items-center gap-2 font-medium">
+                                    {isPublished ? <Eye size={15} /> : <EyeOff size={15} className="text-stone-500" />}
+                                    Visibility
+                                </span>
+                                <span className={`text-xs font-semibold ${isPublished ? "text-emerald-300" : "text-stone-400"}`}>
+                                    {isPublished ? "Published" : "Draft"}
                                 </span>
                             </button>
                         </div>
@@ -284,7 +320,7 @@ const ProjectForm = ({ project, onSuccess, onCancel }) => {
                     </button>
                     <button
                         type="button"
-                        onClick={onCancel}
+                        onClick={() => confirmNavigation(onCancel)}
                         className="flex items-center gap-2 rounded-lg border border-stone-700/70 px-5 py-2.5 text-sm font-medium text-stone-400 transition-colors hover:border-stone-600 hover:text-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson active:opacity-80"
                     >
                         <X size={14} />

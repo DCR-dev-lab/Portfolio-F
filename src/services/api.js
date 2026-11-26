@@ -37,7 +37,10 @@ api.interceptors.response.use(
         window.location.pathname.startsWith("/mod") &&
         window.location.pathname !== "/mod/login"
       ) {
-        window.location.href = "/mod/login";
+        const returnTo = encodeURIComponent(
+          `${window.location.pathname}${window.location.search || ""}`
+        );
+        window.location.href = `/mod/login?redirect=${returnTo}`;
       }
     }
     return Promise.reject(error);

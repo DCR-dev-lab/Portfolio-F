@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { NavLink, useNavigate, Outlet } from "react-router-dom";
+import { NavLink, useNavigate, Outlet, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Toaster } from "sonner";
 import api from "../../services/api";
-import usePageSEO from "../../hooks/usePageSEO";
+import { UnsavedChangesProvider, useUnsavedContext } from "../../context/UnsavedChangesContext";
 import {
     LayoutDashboard,
     FolderKanban,
@@ -14,6 +14,7 @@ import {
     Menu,
     X,
     ChevronRight,
+    ExternalLink,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -24,24 +25,38 @@ const NAV_ITEMS = [
     { to: "/mod/audit-log", icon: Activity, label: "Activity Log" },
 ];
 
-const AdminLayout = () => {
-    usePageSEO({
-        title: "Mod Studio",
-        description: "Restricted moderation dashboard.",
-        noindex: true,
-    });
-
+const AdminShell = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
+    const { confirmNavigation } = useUnsavedContext();
 
-    const handleLogout = async () => {
-        try {
-            await api.post("/admin/logout");
-        } catch {
-            // Best-effort server-side token revocation
+    const handleNavClick = (e, to) => {
+        if (location.pathname === to) {
+            setSidebarOpen(false);
+            return;
         }
-        Cookies.remove("adminToken");
-        navigate("/mod/login", { replace: true });
+        e.preventDefault();
+        confirmNavigation(() => {
+            setSidebarOpen(false);
+            navigate(to);
+        });
+    };
+
+    const handleLogout = () => {
+        confirmNavigation(async () => {
+            setLoggingOut(true);
+            try {
+                await api.post("/admin/logout");
+            } catch {
+                // Even if token already expired, still clear local session
+            } finally {
+                Cookies.remove("adminToken");
+                setLoggingOut(false);
+                navigate("/mod/login");
+            }
+        });
     };
 
     const SidebarContent = () => (
@@ -63,7 +78,7 @@ const AdminLayout = () => {
                     <NavLink
                         key={to}
                         to={to}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={(e) => handleNavClick(e, to)}
                         className={({ isActive }) =>
                             `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson active:opacity-80 ${
                                 isActive
@@ -88,14 +103,24 @@ const AdminLayout = () => {
                 ))}
             </nav>
 
-            {/* Logout */}
-            <div className="border-t border-stone-800 px-3 py-4">
+            {/* Footer actions */}
+            <div className="space-y-1 border-t border-stone-800 px-3 py-4">
+                <a
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-stone-400 transition-colors hover:bg-stone-800 hover:text-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson active:opacity-80"
+                >
+                    <span>View Live Site</span>
+                    <ExternalLink size={14} className="text-stone-500" />
+                </a>
                 <button
                     onClick={handleLogout}
+                    disabled={loggingOut}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-stone-400 transition-colors hover:bg-red-900/20 hover:text-red-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson active:opacity-80 disabled:opacity-50"
                 >
                     <LogOut size={16} />
-                    <span>Logout</span>
+                    <span>{loggingOut ? "Logging out…" : "Logout"}</span>
                 </button>
             </div>
         </div>
@@ -158,5 +183,11 @@ const AdminLayout = () => {
         </div>
     );
 };
+
+const AdminLayout = () => (
+    <UnsavedChangesProvider>
+        <AdminShell />
+    </UnsavedChangesProvider>
+);
 
 export default AdminLayout;

@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import api from "../../services/api";
 import { toast } from "sonner";
-import MDEditor from "@uiw/react-md-editor";
 import ImageUploadField from "../../components/ui/ImageUploadField";
-import { SAFE_MD_PREVIEW_OPTIONS } from "../../utils/security";
+import usePageSEO from "../../hooks/usePageSEO";
+import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
+import { FieldLabel, DarkInput, DarkTextarea, Section } from "../../components/ui/FormPrimitives";
 import {
     UserCircle,
     Save,
-    CheckCircle2,
     AlertCircle,
     Globe,
     Github,
@@ -18,74 +18,47 @@ import {
     MapPin,
     Mail,
     FileText,
-    Image,
-    Link as LinkIcon,
     Hash,
 } from "lucide-react";
 
-/* ── Reusable dark-themed field components ───────────────────── */
-const FieldLabel = ({ children }) => (
-    <label className="mb-1.5 block text-xs font-medium text-stone-400">
-        {children}
-    </label>
-);
-
-const DarkInput = ({ icon: Icon, ...props }) => (
-    <div className="relative">
-        {Icon && (
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-500">
-                <Icon size={14} />
-            </span>
-        )}
-        <input
-            {...props}
-            className={`w-full rounded-lg border border-stone-700/70 bg-stone-900 py-2.5 text-sm text-cream placeholder-stone-600 outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${
-                Icon ? "pl-9 pr-3.5" : "px-3.5"
-            } ${props.className || ""}`}
-        />
-    </div>
-);
-
-const DarkTextarea = ({ rows = 4, ...props }) => (
-    <textarea
-        rows={rows}
-        {...props}
-        className={`w-full resize-y rounded-lg border border-stone-700/70 bg-stone-900 px-3.5 py-2.5 text-sm text-cream placeholder-stone-600 outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crimson ${props.className || ""}`}
-    />
-);
-
-const Section = ({ title, children }) => (
-    <div className="rounded-xl border border-stone-800/70 bg-stone-900/50 p-5">
-        <h3 className="mb-4 text-sm font-semibold text-stone-300">{title}</h3>
-        <div className="space-y-4">{children}</div>
-    </div>
-);
+const EMPTY_FORM = {
+    fullName: "",
+    title: "",
+    shortIntro: "",
+    aboutMe: "",
+    email: "",
+    phone: "",
+    location: "",
+    github: "",
+    linkedin: "",
+    twitter: "",
+    instagram: "",
+    resumeUrl: "",
+    profilePictureUrl: "",
+    homeProjectsCount: 7,
+    homeSkillsPerCategory: 8,
+};
 
 /* ───────────────────────────────────────────────────────────── */
 const AdminProfile = () => {
+    usePageSEO({
+        title: "Edit Profile | Mod Studio",
+        description: "Manage portfolio profile settings.",
+        noindex: true,
+    });
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [saveError, setSaveError] = useState("");
-    const [saveMessage, setSaveMessage] = useState("");
     const [disabled, setDisabled] = useState(false);
 
-    const [form, setForm] = useState({
-        fullName: "",
-        title: "",
-        shortIntro: "",
-        aboutMe: "",
-        email: "",
-        phone: "",
-        location: "",
-        github: "",
-        linkedin: "",
-        twitter: "",
-        instagram: "",
-        resumeUrl: "",
-        profilePictureUrl: "",
-        homeProjectsCount: "",
-        homeSkillsPerCategory: "",
-    });
+    const [form, setForm] = useState(EMPTY_FORM);
+    const [initialForm, setInitialForm] = useState(EMPTY_FORM);
+
+    const isDirty = useMemo(
+        () => !loading && JSON.stringify(form) !== JSON.stringify(initialForm),
+        [loading, form, initialForm]
+    );
+    useUnsavedChanges(isDirty);
 
     // fetch profile
     useEffect(() => {
@@ -93,9 +66,7 @@ const AdminProfile = () => {
             try {
                 const res = await api.get("/admin/profile");
                 if (res.data) {
-                    // Using .trim() ensures that strings containing only spaces
-                    // turn back into truly empty strings (""), exposing your placeholders.
-                    setForm({
+                    const loaded = {
                         fullName: (res.data.fullName || "").trim(),
                         title: (res.data.title || "").trim(),
                         shortIntro: (res.data.shortIntro || "").trim(),
@@ -111,7 +82,9 @@ const AdminProfile = () => {
                         profilePictureUrl: (res.data.profilePictureUrl || "").trim(),
                         homeProjectsCount: res.data.homeProjectsCount ?? 7,
                         homeSkillsPerCategory: res.data.homeSkillsPerCategory ?? 8,
-                    });
+                    };
+                    setForm(loaded);
+                    setInitialForm(loaded);
                 }
             } catch (err) {
                 setError(err.response?.data?.message || "Failed to load profile");
@@ -130,8 +103,6 @@ const AdminProfile = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setDisabled(true);
-        setSaveError("");
-        setSaveMessage("");
 
         try {
             await api.put("/admin/profile", {
@@ -154,13 +125,11 @@ const AdminProfile = () => {
                 },
             });
 
+            setInitialForm(form);
             toast.success("Profile updated successfully.");
-            setSaveMessage("Profile updated successfully.");
-            setTimeout(() => setSaveMessage(""), 4000);
         } catch (err) {
             const msg = err.response?.data?.message || "Failed to update profile.";
             toast.error(msg);
-            setSaveError(msg);
         } finally {
             setDisabled(false);
         }
@@ -190,20 +159,6 @@ const AdminProfile = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Alerts */}
-                {saveMessage && (
-                    <div className="flex items-center gap-2 rounded-lg border border-emerald-800/50 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-400">
-                        <CheckCircle2 size={14} className="shrink-0" />
-                        {saveMessage}
-                    </div>
-                )}
-                {saveError && (
-                    <div className="flex items-center gap-2 rounded-lg border border-red-900/50 bg-red-950/40 px-4 py-3 text-sm text-red-400">
-                        <AlertCircle size={14} className="shrink-0" />
-                        {saveError}
-                    </div>
-                )}
-
                 {/* Identity */}
                 <Section title="Identity">
                     <div>
@@ -220,17 +175,15 @@ const AdminProfile = () => {
                         <p className="mt-1 text-right text-xs text-stone-600">{form.shortIntro.length}/200</p>
                     </div>
                     <div>
-                        <FieldLabel>About Me</FieldLabel>
-                        <div data-color-mode="dark">
-                            <MDEditor
-                                value={form.aboutMe}
-                                onChange={(val) => setForm((prev) => ({ ...prev, aboutMe: val || "" }))}
-                                height={220}
-                                preview="edit"
-                                previewOptions={SAFE_MD_PREVIEW_OPTIONS}
-                                className="!border-stone-700/70 !bg-stone-900"
-                            />
-                        </div>
+                        <FieldLabel>About Me <span className="text-stone-600">(plain text display statement)</span></FieldLabel>
+                        <DarkTextarea
+                            name="aboutMe"
+                            rows={4}
+                            placeholder="Write your About display statement..."
+                            value={form.aboutMe}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
                 </Section>
 
@@ -314,11 +267,6 @@ const AdminProfile = () => {
                         <Save size={15} />
                         {disabled ? "Saving…" : "Save Profile"}
                     </button>
-                    {saveMessage && (
-                        <span className="flex items-center gap-1.5 text-sm text-emerald-400">
-                            <CheckCircle2 size={14} /> Saved
-                        </span>
-                    )}
                 </div>
             </form>
         </div>

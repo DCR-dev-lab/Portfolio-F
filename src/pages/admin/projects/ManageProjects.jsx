@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../../services/api";
 import ProjectList from "./ProjectList";
+import usePageSEO from "../../../hooks/usePageSEO";
 import { Loader2 } from "lucide-react";
 
 const ManageProjects = () => {
+    usePageSEO({
+        title: "Projects | Mod Studio",
+        description: "Manage portfolio projects.",
+        noindex: true,
+    });
+
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
 

@@ -51,20 +51,34 @@ const Dashboard = () => {
     });
 
     const navigate = useNavigate();
-    const [stats, setStats] = useState({ projects: null, skills: null, logs: null });
+    const [stats, setStats] = useState({
+        projects: null,
+        drafts: 0,
+        skills: null,
+        logs: null,
+        failedLogins: 0,
+    });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const [proj, skill, log] = await Promise.all([
+                const [proj, skill, log, sec] = await Promise.all([
                     api.get("/admin/dashboard/projects"),
                     api.get("/admin/dashboard/skills"),
-                    api.get("/admin/audit-log?limit=200"),
+                    api.get("/admin/audit-log?paginated=true&limit=1"),
+                    api.get("/admin/audit-log?paginated=true&limit=20&entity=Security"),
                 ]);
+                const allProjects = Array.isArray(proj.data) ? proj.data : [];
+                const draftCount = allProjects.filter((p) => p.isPublished === false).length;
+                const secLogs = Array.isArray(sec.data?.logs) ? sec.data.logs : [];
+                const recentFails = secLogs.filter((l) => l.action === "LOGIN_FAILED").length;
+
                 setStats({
-                    projects: proj.data.length,
-                    skills: skill.data.length,
-                    logs: log.data.length,
+                    projects: allProjects.length,
+                    drafts: draftCount,
+                    skills: Array.isArray(skill.data) ? skill.data.length : 0,
+                    logs: log.data?.total ?? 0,
+                    failedLogins: recentFails,
                 });
             } catch {
                 // Stats are non-critical — fail silently
@@ -96,9 +110,21 @@ const Dashboard = () => {
                                 <Icon size={18} />
                             </div>
                             {statKey && stats[statKey] !== null && (
-                                <span className={`font-mono text-2xl font-bold tabular-nums ${color}`}>
-                                    {stats[statKey]}
-                                </span>
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className={`font-mono text-2xl font-bold tabular-nums ${color}`}>
+                                        {stats[statKey]}
+                                    </span>
+                                    {statKey === "projects" && stats.drafts > 0 && (
+                                        <span className="text-xs text-stone-400">
+                                            {stats.drafts} {stats.drafts === 1 ? "draft" : "drafts"}
+                                        </span>
+                                    )}
+                                    {statKey === "logs" && stats.failedLogins > 0 && (
+                                        <span className="text-xs text-red-400">
+                                            {stats.failedLogins} failed {stats.failedLogins === 1 ? "login" : "logins"}
+                                        </span>
+                                    )}
+                                </div>
                             )}
                         </div>
                         <div className="flex-1">

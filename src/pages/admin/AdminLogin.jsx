@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom"
 import api from "../../services/api"
 import Cookies from "js-cookie"
 import usePageSEO from "../../hooks/usePageSEO"
@@ -19,6 +19,16 @@ const AdminLogin = () => {
     const [disabled, setDisabled] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
+    const [searchParams] = useSearchParams()
+
+    useEffect(() => {
+        if (Cookies.get("adminToken")) {
+            const stateTarget = location.state?.from?.pathname
+                ? `${location.state.from.pathname}${location.state.from.search || ""}`
+                : null
+            navigate(getSafeModRedirect(stateTarget || searchParams.get("redirect")), { replace: true })
+        }
+    }, [navigate, location, searchParams])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -33,8 +43,11 @@ const AdminLogin = () => {
             setKey("")
             setError("")
             
-            // Return memory: redirect back to intended internal /mod URL or fallback to dashboard
-            const destination = getSafeModRedirect(location.state?.from?.pathname)
+            // Return memory: state.from (ProtectedRoute) or ?redirect= (401/403 expiry), validated via getSafeModRedirect
+            const stateTarget = location.state?.from?.pathname
+                ? `${location.state.from.pathname}${location.state.from.search || ""}`
+                : null
+            const destination = getSafeModRedirect(stateTarget || searchParams.get("redirect"))
             navigate(destination, { replace: true })
         } catch (err) {
             setError(err.response?.data?.message || "Invalid access key. Try again.");

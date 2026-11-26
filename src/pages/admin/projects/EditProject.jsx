@@ -2,9 +2,16 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 import ProjectForm from "./ProjectForm";
+import usePageSEO from "../../../hooks/usePageSEO";
 import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 
 const EditProject = () => {
+    usePageSEO({
+        title: "Edit Project | Mod Studio",
+        description: "Edit portfolio project details.",
+        noindex: true,
+    });
+
     const { id } = useParams();
     const navigate = useNavigate();
     const [project, setProject] = useState(null);
@@ -15,7 +22,7 @@ const EditProject = () => {
         const fetchProject = async () => {
             try {
                 setLoading(true);
-                const res = await api.get(`/projects/${id}`);
+                const res = await api.get(`/admin/dashboard/projects/${id}`);
                 setProject(res.data);
             } catch (err) {
                 setError(err.response?.data?.message || "Project could not be found.");
